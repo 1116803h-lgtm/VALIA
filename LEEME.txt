@@ -1,0 +1,29 @@
+VALIA · PWA instalable (funciona sin conexión)
+===============================================
+
+CÓMO PUBLICARLO EN GITHUB PAGES
+1. Sube TODO el contenido de esta carpeta (los 6 archivos) a tu repositorio,
+   en la raíz o en una carpeta (p. ej. /valia).
+   Archivos: index.html, manifest.webmanifest, service-worker.js,
+             icon-192.png, icon-512.png, icon-maskable-512.png
+2. En el repo: Settings > Pages > activa GitHub Pages sobre esa rama/carpeta.
+3. Abre la URL que te da GitHub (https://ingjosemdbg-hub.github.io/...).
+
+CÓMO INSTALARLO
+- En Chrome/Edge (PC): aparece un icono de "Instalar" en la barra de direcciones,
+  o menú ⋮ > "Instalar VALIA". Se crea acceso directo y se abre en ventana propia.
+- En Android (Chrome): menú ⋮ > "Agregar a pantalla de inicio".
+- En iPhone/iPad (Safari): Compartir > "Agregar a pantalla de inicio".
+
+SIN CONEXIÓN
+- La primera vez necesita internet (una sola carga).
+- Después funciona 100% offline, incluso recién instalado.
+
+ACTUALIZAR A UNA VERSIÓN NUEVA
+- Reemplaza index.html (y lo que cambie) en el repo.
+- Edita service-worker.js y sube el número de versión:  const CACHE = 'valia-v2';
+  (eso obliga a los dispositivos a refrescar la app la próxima vez que haya internet).
+
+NOTA: abrir index.html con doble clic (file://) también funciona, pero SIN el
+botón de "Instalar" ni el modo offline. Para eso hay que servirlo por http(s),
+y GitHub Pages ya lo hace.
