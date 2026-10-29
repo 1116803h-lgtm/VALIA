@@ -1,6 +1,6 @@
 /* VALIA · Service Worker — funcionamiento sin conexión
    Sube la versión (CACHE) cada vez que publiques una nueva app para forzar refresco. */
-const CACHE = 'valia-v1';
+const CACHE = 'valia-v2';
 const ASSETS = [
   './',
   './index.html',
