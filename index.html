@@ -1704,7 +1704,43 @@ const VCORE_LIB={
     {c:'TA-MANTENIMIENTO',n:'Mantenimiento de instalaciones',f:'Operación y mantenimiento',firma:[['MEC-16','baja'],['MEC-17','baja'],['MEC-14','baja'],['MEC-22','media']]},
     {c:'TA-ABANDONO',n:'Desmantelamiento y abandono',f:'Abandono',firma:[['MEC-02','media'],['MEC-06','media'],['MEC-16','media'],['MEC-22','media']]}
   ],
-  receptores(){const seen=new Set(),out=[];Object.values(this.mec).forEach(m=>m.r.forEach(([md,cp])=>{const k=md+'|'+cp;if(!seen.has(k)){seen.add(k);out.push({medio:md,componente:cp});}}));return out.sort((a,b)=>a.medio.localeCompare(b.medio)||a.componente.localeCompare(b.componente));}
+  receptores(){const seen=new Set(),out=[];Object.values(this.mec).forEach(m=>m.r.forEach(([md,cp])=>{const k=md+'|'+cp;if(!seen.has(k)){seen.add(k);out.push({medio:md,componente:cp});}}));return out.sort((a,b)=>a.medio.localeCompare(b.medio)||a.componente.localeCompare(b.componente));},
+  // Mapa receptor del generador (medio|componente|factor) → código de factor de la Base Maestra (CATALOG).
+  // Permite que la siembra guarde factores alineados al catálogo (componente, nombre y código correctos).
+  facmap:{
+    'M01|Agua subterránea|Calidad del agua subterránea':'HIG-01',
+    'M01|Agua subterránea|Disponibilidad / nivel freático':'HIG-02',
+    'M01|Agua subterránea|Recarga':'HIG-04',
+    'M01|Agua superficial|Calidad del agua superficial':'HIS-06',
+    'M01|Agua superficial|Carga de sedimentos':'HIS-07',
+    'M01|Agua superficial|Disponibilidad de agua superficial':'HIS-05',
+    'M01|Agua superficial|Red de drenaje':'HIS-01',
+    'M01|Atmósfera|Calidad del aire':'ATM-01',
+    'M01|Atmósfera|Calidad del aire / nivel sonoro':'ATM-01',
+    'M01|Atmósfera|Nivel sonoro':'ATM-05',
+    'M01|Atmósfera|Vibraciones':'ATM-06',
+    'M01|Geomorfología|Topografía':'GEO-04',
+    'M01|Suelo|Calidad del suelo':'SUE-01',
+    'M01|Suelo|Capacidad de infiltración':'SUE-07',
+    'M01|Suelo|Estructura y propiedades físicas':'SUE-02',
+    'M02|Fauna|Desplazamiento':'FAU-05',
+    'M02|Fauna|Distribución / conectividad':'FAU-06',
+    'M02|Fauna|Hábitat disponible':'FAU-07',
+    'M02|Vegetación|Cobertura vegetal':'VEG-01',
+    'M03|Paisaje|Calidad paisajística nocturna':'PAI-01',
+    'M03|Paisaje|Integridad del paisaje':'PAI-08',
+    'M04|Economía|Empleo / actividad económica':'ECON-01',
+    'M04|Infraestructura y servicios|Servicios de manejo de residuos':'INF-04',
+    'M04|Movilidad|Movilidad / seguridad vial':'MOV-04',
+    'M04|Movilidad|Movilidad vehicular':'MOV-02',
+    'M04|Patrimonio|Patrimonio cultural / arqueológico':'PAT-04',
+    'M04|Población|Abasto de agua':'INF-01',
+    'M04|Población|Calidad de vida':'POB-03',
+    'M04|Población|Salud y calidad de vida':'POB-01',
+    'M04|Territorio|Usos del suelo':'TER-01',
+    'M05|Áreas sensibles|Integridad de humedal':'AIA-07'
+  },
+  catCode(medio,comp,fac){return this.facmap[medio+'|'+comp+'|'+fac]||'';}
 };
 const VCORE_FASES=['Preparación del sitio','Construcción','Operación y mantenimiento','Abandono'];
 const VCore={
@@ -1752,16 +1788,30 @@ const VCore={
     const cands=this.derive();
     if(!cands.length){Toast.show('Ninguna actividad tiene firma. Asigna firma (o usa "sugerir") a al menos una actividad.','warn');return;}
     const facMap={};
-    const ensureFactor=(medio,comp,fac)=>{const key=medio+'|'+comp+'|'+fac;if(facMap[key])return facMap[key];
-      let f=DB.factors.find(x=>x.medium===medio&&x.component===comp&&x.name===fac); if(!f){f={id:UID('FAC'),medium:medio,component:comp,component_code:'',name:fac,code:'',indicator:'',unit:'',sensitivity:''};DB.factors.push(f);} facMap[key]=f.id;return f.id;};
+    const ensureFactor=(medio,comp,fac)=>{
+      // 1) Resolver contra la Base Maestra: factor alineado a catálogo (código, componente y nombre canónicos).
+      const code=VCORE_LIB.catCode(medio,comp,fac);
+      if(code){
+        let f=DB.factors.find(x=>x.code===code);   // dedup por código de catálogo
+        if(!f){const x=Catalog.factor(code),cc=x?Catalog.component(x.comp):null;
+          f={id:UID('FAC'),medium:x?x.m:medio,component:cc?cc.n:comp,component_code:x?x.comp:'',name:x?x.n:fac,code:code,tipo:x?x.t:'',indicator:'',unit:'',sensitivity:''};
+          DB.factors.push(f);}
+        facMap[f.id]=1;return f.id;
+      }
+      // 2) Sin mapeo: al menos alinear el componente por nombre; el factor queda como "Otro" (texto libre).
+      const cc=Catalog.componentByName(medio,comp);
+      let f=DB.factors.find(x=>x.medium===medio&&x.component===(cc?cc.n:comp)&&x.name===fac);
+      if(!f){f={id:UID('FAC'),medium:medio,component:cc?cc.n:comp,component_code:cc?cc.c:'',name:fac,code:'',indicator:'',unit:'',sensitivity:''};DB.factors.push(f);}
+      facMap[f.id]=1;return f.id;};
     let nInt=0,nImp=0,nVal=0; const actSet=new Set();
     cands.forEach(c=>{const aid=c.actId; actSet.add(aid); const fid=ensureFactor(c.medio,c.componente,c.factor);
+      const fObj=Data.factor(fid); const rec=fObj&&fObj.code?Catalog.receptorOfFactor(fObj.code):null;
       let it=Data.interaction(aid,fid); if(!it){it={id:UID('INT'),activity_id:aid,factor_id:fid,exists:true};DB.interactions.push(it);nInt++;}
       const dup=DB.impacts.find(im=>im.activity_id===aid&&im.factor_id===fid&&im.vcore_mec===c.mec);
-      if(!dup){const nombre=c.mecNom+' → '+c.componente;
+      if(!dup){const nombre=c.mecNom+' → '+(fObj?fObj.component:c.componente);
         const imp={id:UID('IMP'),interaction_id:it.id,activity_id:aid,factor_id:fid,name:nombre,description:'',
-          aspect_code:'',aspect_name:c.mecNom,aspect_family:'',causal_mechanism:c.act+' → '+c.mecNom+' → '+c.factor,
-          nature:c.naturaleza==='positivo'?'POS':'NEG',receptor:c.componente,receptor_code:'',rel_type:'D',impact_code:'',status:'DRAFT',seq:DB.impacts.length+1,
+          aspect_code:'',aspect_name:c.mecNom,aspect_family:'',causal_mechanism:c.act+' → '+c.mecNom+' → '+(fObj?fObj.name:c.factor),
+          nature:c.naturaleza==='positivo'?'POS':'NEG',receptor:rec?rec.s:(fObj?fObj.component:c.componente),receptor_code:rec?rec.c:'',rel_type:'D',impact_code:'',status:'DRAFT',seq:DB.impacts.length+1,
           vcore_mec:c.mec,vcore_safeguard:c.flag||'',vcore_route:this.route(c)};
         DB.impacts.push(imp);nImp++;
         if(preval){const Ai=c.intensidad==='alta'?4:c.intensidad==='media'?3:2,Ri=c.flag?5:3;
