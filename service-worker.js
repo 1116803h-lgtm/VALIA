@@ -1,6 +1,6 @@
 /* VALIA · Service Worker — funcionamiento sin conexión
    Sube la versión (CACHE) cada vez que publiques una nueva app para forzar refresco. */
-const CACHE = 'valia-v2';
+const CACHE = 'valia-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -36,9 +36,14 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('./index.html', copy));
-          return res;
+          // Solo guarda respuestas válidas: un 404 o error del servidor no debe
+          // reemplazar la copia sin conexión que sí funciona.
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put('./index.html', copy));
+            return res;
+          }
+          return caches.match('./index.html').then((r) => r || res);
         })
         .catch(() => caches.match('./index.html').then((r) => r || caches.match('./')))
     );

@@ -55,6 +55,9 @@ a{color:var(--brand)}
 .brand .tag{font-size:10.5px;color:#9FD4CF;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans)}
 .topbar .proj-name{font-family:var(--serif);font-size:15px;color:#EAF3F2;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .topbar .spacer{flex:1}
+.save-status{font-size:11.5px;color:#9FD4CF;white-space:nowrap}
+.save-status.dirty{color:#F0C674}
+.save-status.err{color:#FF9C9C}
 .method-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:6px;font-size:12px;color:#EAF3F2}
 .method-badge .dot{width:7px;height:7px;border-radius:50%;background:#5FD6A0;box-shadow:0 0 0 3px rgba(95,214,160,.25)}
 .method-badge select{background:transparent;border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
@@ -327,6 +330,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   <div class="topbar">
     <div class="brand"><span class="logo">VALIA</span><span class="tag">Valoración · Impacto Ambiental</span></div>
     <span class="proj-name" id="topProjName">— Sin proyecto —</span>
+    <span class="save-status" id="saveStatus" title="Estado del guardado"></span>
     <div class="spacer"></div>
     <div class="method-badge">
       <span class="dot"></span>
@@ -1049,7 +1053,7 @@ function audit(action,entity,detail){
   DB.audit.unshift({id:UID('AUD'),at:nowISO(),action,entity,detail:detail||''});
   if(DB.audit.length>500)DB.audit.pop();
 }
-function touch(){ if(DB){DB.project.updated_at=nowISO(); Persist.autosave();} }
+function touch(){ if(DB){DB.project.updated_at=nowISO(); Persist._dirty=true; Persist.autosave(); Persist._status();} }
 
 /* ============================================================
    4. BIBLIOTECAS SECTORIALES (solo SUGIEREN, no deciden)
@@ -1282,7 +1286,49 @@ const Reco={
    5. PERSISTENCIA  (archivo JSON + autosave tolerante a fallos)
    ============================================================ */
 const Persist={
-  autosave(){ try{ localStorage.setItem('valia:autosave', JSON.stringify(DB)); }catch(e){} },
+  _nextSeq(){ return (DB.measures||[]).reduce((m,x)=>Math.max(m,x.seq||0),0)+1; },
+  _dirty:false, _lsOk:true, _lsWarned:false, _lastFileSave:null, _remindedNoFile:false,
+  AUTO_MS:5*60*1000,   // autoguardado en archivo cada 5 minutos
+  autosave(){
+    try{ localStorage.setItem('valia:autosave', JSON.stringify(DB)); this._lsOk=true; this._lsWarned=false; }
+    catch(e){
+      this._lsOk=false;
+      if(!this._lsWarned){ this._lsWarned=true;
+        Toast.show('El respaldo automático del navegador está lleno o bloqueado. Guarda en archivo (💾) para no perder cambios.','warn',8000); }
+    }
+    this._status();
+  },
+  _hhmm(d){ return d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); },
+  _status(){
+    const el=document.getElementById('saveStatus'); if(!el)return;
+    el.className='save-status';
+    if(!this._lsOk){ el.classList.add('err'); el.textContent='⚠ Respaldo local sin espacio'; return; }
+    if(this._dirty){ el.classList.add('dirty'); el.textContent=this._fileHandle?'● Cambios por guardar en archivo':'● Sin guardar en archivo'; return; }
+    el.textContent=this._lastFileSave?('✓ Guardado '+this._hhmm(this._lastFileSave)):'';
+  },
+  _markSaved(){ this._dirty=false; this._lastFileSave=new Date(); this._status(); },
+  // Cada 5 min: si hay cambios y un archivo elegido, lo actualiza sin preguntar.
+  async _tick(){
+    if(!DB || !this._dirty) return;
+    this.autosave();
+    if(this._hasFSA() && this._fileHandle){
+      try{
+        const perm=this._fileHandle.queryPermission?await this._fileHandle.queryPermission({mode:'readwrite'}):'granted';
+        if(perm!=='granted') return;   // sin permiso no se puede escribir en segundo plano
+        DB.project.updated_at=nowISO();
+        await this._writeHandle(this._fileHandle);
+        this._markSaved();
+        Toast.show('Autoguardado en '+(this._fileHandle.name||'archivo')+' · '+this._hhmm(new Date()),'ok',2500);
+      }catch(e){ Toast.show('No se pudo autoguardar en el archivo. Usa 💾 Guardar.','warn',5000); }
+    } else if(!this._remindedNoFile){
+      this._remindedNoFile=true;
+      Toast.show('Tus cambios están respaldados en este navegador. Usa "Guardar como…" una vez y VALIA guardará en ese archivo cada 5 minutos.','info',9000);
+    }
+  },
+  startAuto(){
+    setInterval(()=>this._tick(), this.AUTO_MS);
+    window.addEventListener('beforeunload',(e)=>{ if(this._dirty){ e.preventDefault(); e.returnValue=''; } });
+  },
   restore(){ try{ const s=localStorage.getItem('valia:autosave'); if(s) return JSON.parse(s);}catch(e){} return null; },
   // --- Guardado en archivo real (File System Access API con respaldo a descarga) ---
   _fileHandle:null,   // referencia al archivo elegido con "Guardar como…"; permite que "Guardar" lo actualice
@@ -1315,12 +1361,12 @@ const Persist={
           types:[{description:'Proyecto VALIA',accept:{'application/json':['.json']}}]
         });
         await this._writeHandle(h);
-        this._fileHandle=h; this.autosave();
+        this._fileHandle=h; this.autosave(); this._markSaved();
         Toast.show('Guardado: '+(h.name||this._suggestedName()));
         if(typeof Nav!=='undefined')Nav.render();
       }catch(e){ if(e&&e.name==='AbortError')return; Toast.show('No se pudo guardar: '+(e.message||e),'err'); }
     } else {
-      this._downloadFallback();
+      this._downloadFallback(); this._markSaved();
       Toast.show('Proyecto descargado (tu navegador no permite elegir carpeta)','info');
     }
   },
@@ -1332,7 +1378,7 @@ const Persist={
     if(this._hasFSA() && this._fileHandle){
       try{
         if(!await this._ensureWritable(this._fileHandle)){ Toast.show('Permiso denegado; usa "Guardar como…"','warn'); return; }
-        await this._writeHandle(this._fileHandle); this.autosave();
+        await this._writeHandle(this._fileHandle); this.autosave(); this._markSaved();
         Toast.show('Cambios guardados en '+(this._fileHandle.name||'el archivo'));
       }catch(e){ Toast.show('No se pudo actualizar; intenta "Guardar como…": '+(e.message||e),'err'); }
     } else {
@@ -1359,6 +1405,7 @@ const Persist={
         if(!d.schema||!d.project){throw new Error('formato');}
         DB=migrate(d); ACTIVE_METHOD=DB.method||'CONESA-STD-01';
         Persist._fileHandle=handle||null;   // recuerda el archivo abierto (si lo hay) para "Guardar"
+        currentImpactId=null; Persist._dirty=false; Persist._lastFileSave=null;
         recalcAll(); Nav.render(); Router.go('project'); Persist.autosave();
         Toast.show('Proyecto cargado: '+(DB.project.name||DB.project.code||'sin nombre'));
       }catch(e){ Toast.show('Archivo no válido','err'); }
@@ -1366,7 +1413,7 @@ const Persist={
     r.readAsText(file);
   },
   newProject(){
-    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD; Persist._fileHandle=null;
+    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD; Persist._fileHandle=null; Persist._dirty=false; Persist._lastFileSave=null; currentImpactId=null;
       Nav.render(); Router.go('project'); Persist.autosave(); Toast.show('Nuevo proyecto creado'); };
     if(DB && (DB.impacts.length||DB.project.name)) confirmBox('¿Crear un proyecto nuevo? Se perderán los cambios no guardados en archivo.',go,'Crear nuevo');
     else go();
@@ -1374,6 +1421,16 @@ const Persist={
 };
 function migrate(d){ // asegura arrays presentes + compatibilidad con esquema de 2 niveles
   ['stages','components','activities','factors','interactions','impacts','assessments','measures','pma_programs','monitoring','corrective','causalNodes','causalEdges','audit'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
+  { let seq=d.measures.reduce((m,x)=>Math.max(m,x.seq||0),0);
+    d.measures.forEach(m=>{
+      if(!m.cat){ m.cat=(typeof TYPE2CAT!=='undefined'&&TYPE2CAT[m.type])||'Mitigación'; }
+      if(!m.out && typeof CatalogMed!=='undefined') m.out=CatalogMed.outCode(m.cat);
+      if(!m.seq) m.seq=++seq;
+      if(!Array.isArray(m.impact_ids)) m.impact_ids=[];
+      if(!m.ie && m.indicator) m.ie=m.indicator;
+      if(!m.status) m.status='ACTIVE';
+    }); }
+  d.assessments=d.assessments.filter(a=>!a._new);
   if(d.med_base_version===undefined) d.med_base_version=(typeof CATALOG_MED!=='undefined'?CATALOG_MED.ver:'');
   // Compatibilidad: actividades del esquema antiguo tenían stage_id directo. Se les crea un componente "General".
   d.activities.forEach(a=>{
@@ -1457,7 +1514,7 @@ const Nav={
 };
 const Router={
   current:'project',
-  go(id){ if(!DB){DB=blankProject();} this.current=id; this.refresh();
+  go(id){ if(!DB){DB=blankProject();} if(this.current==='assess'&&id!=='assess'&&typeof Assess!=='undefined')Assess._prune(); this.current=id; this.refresh();
     $$('.nav a').forEach(a=>a.classList.remove('active'));
     const a=$('#nav-'+id); if(a)a.classList.add('active');
   },
@@ -2576,7 +2633,7 @@ Screens._toggleExpert=function(){ Screens._impExpertOnly=!Screens._impExpertOnly
    ============================================================ */
 const Assess={
   edit(impId,type='INITIAL'){
-    currentImpactId=impId; Assess.type=type;
+    Assess._prune(); currentImpactId=impId; Assess.type=type;
     const M=getMethod();
     let as=type==='RESIDUAL'?Data.residualAssess(impId):Data.initialAssess(impId);
     if(!as){
@@ -2585,6 +2642,7 @@ const Assess={
           nature:Data.impact(impId).nature,criteria:{},evaluator:DB.project.responsible||'',date:todayStr(),
           confidence_notes:''};
       if(type==='RESIDUAL'&&init){ as.criteria=JSON.parse(JSON.stringify(init.criteria)); } // parte del inicial
+      as._new=true;   // se descarta si el usuario sale sin capturar nada
       DB.assessments.push(as);
     }
     as.method=M.id;
@@ -2736,17 +2794,17 @@ Assess._calcPanel=function(as){
 };
 // --- setters en vivo ---
 Assess._current=function(){return Assess.type==='RESIDUAL'?Data.residualAssess(currentImpactId):Data.initialAssess(currentImpactId);};
-Assess._ensure=function(code){const as=Assess._current();if(!as.criteria[code])as.criteria[code]={value:null,modifier:0,justification:'',source:'',confidence:''};return as.criteria[code];};
+Assess._ensure=function(code){const as=Assess._current();if(as)delete as._new;if(!as.criteria[code])as.criteria[code]={value:null,modifier:0,justification:'',source:'',confidence:''};return as.criteria[code];};
 Assess._pick=function(code,v){const e=Assess._ensure(code);e.value=v;const c=getMethod().criteria.find(x=>x.code===code);e.category=c.scale.find(s=>s.v===v).l;touch();Assess._refreshCrit(code);Assess._refreshCalc();};
 Assess._mod=function(code,v){const e=Assess._ensure(code);e.modifier=v;touch();Assess._refreshCrit(code);Assess._refreshCalc();};
 Assess._just=function(code,v){Assess._ensure(code).justification=v;touch();};
 Assess._src=function(code,v){Assess._ensure(code).source=v;touch();};
 Assess._conf=function(code,v){Assess._ensure(code).confidence=v;touch();};
-Assess._meta=function(k,v){const as=Assess._current();as[k]=v;touch();};
-Assess._setCat=function(v){const as=Assess._current();if(as){as.category=v;touch();}};
-Assess._setMit=function(t){const as=Assess._current();if(!as)return;as.criteria=as.criteria||{};as.criteria.T={value:t};touch();Assess._refreshCalc();};
+Assess._meta=function(k,v){const as=Assess._current();delete as._new;as[k]=v;touch();};
+Assess._setCat=function(v){const as=Assess._current();if(as){delete as._new;as.category=v;touch();}};
+Assess._setMit=function(t){const as=Assess._current();if(!as)return;delete as._new;as.criteria=as.criteria||{};as.criteria.T={value:t};touch();Assess._refreshCalc();};
 Assess._impset=function(k,v){const imp=Data.impact(currentImpactId);imp[k]=v;touch();};
-Assess._setNature=function(n){const imp=Data.impact(currentImpactId);imp.nature=n;const as=Assess._current();as.nature=n;touch();
+Assess._setNature=function(n){const imp=Data.impact(currentImpactId);imp.nature=n;const as=Assess._current();delete as._new;as.nature=n;touch();
   $$('.card .opt').forEach(o=>{});Router.refresh();};
 Assess._toggleCrit=function(code){$('#crit_'+code).classList.toggle('open');};
 Assess._refreshCrit=function(code){
@@ -2766,7 +2824,9 @@ Assess._refreshCalc=function(){
   Nav.render();$$('.nav a').forEach(a=>a.classList.remove('active'));const na=$('#nav-assess');if(na)na.classList.add('active');
 };
 Assess._done=function(){recalcAll();touch();Router.go('impacts');Toast.show('Valoración guardada');};
-Assess._changeImpact=function(){ currentImpactId=null; Router.refresh(); };
+Assess._changeImpact=function(){ Assess._prune(); currentImpactId=null; Router.refresh(); };
+// Quita valoraciones que se abrieron pero nunca se capturaron (y residuales copiadas sin modificar)
+Assess._prune=function(){ if(!DB)return; const n=DB.assessments.length; DB.assessments=DB.assessments.filter(a=>!a._new); if(DB.assessments.length!==n) Persist.autosave(); };
 Assess._picker=function(){
   const M=getMethod();
   const rows=DB.impacts.map(i=>{const as=Data.initialAssess(i.id);const a=Data.activity(i.activity_id),f=Data.factor(i.factor_id);
@@ -2791,12 +2851,12 @@ Screens.measures=function(){
     const imps=(m.impact_ids||[]).map(id=>Data.impact(id)).filter(Boolean);
     const t=MEASURE_TYPES.find(x=>x[0]===m.type);
     return `<div class="card"><div class="hd">
-      <div style="display:flex;align-items:center;gap:9px"><span class="chip brand" style="background:var(--brand-l);color:var(--brand-d)">${t?t[1]:'Medida'}</span><h3>${esc(m.name)}</h3></div>
+      <div style="display:flex;align-items:center;gap:9px"><span class="chip ${PMA.outClass(m.out||CatalogMed.outCode(m.cat||''))}">${PMA.outNum(m)} · ${esc(m.cat||(t?t[1]:'Medida'))}</span><h3>${esc(m.name)}</h3></div>
       <button class="iconbtn del" onclick="Screens._delMeasure('${m.id}')">🗑</button></div>
       <div class="bd">
         ${m.description?`<p class="small" style="margin-top:0">${esc(m.description)}</p>`:''}
         <div class="pill-row">${imps.map(i=>`<span class="chip gray">${esc(i.name)}</span>`).join('')||'<span class="muted small">Sin impactos asociados</span>'}</div>
-        <div class="rowbtns"><button class="btn ghost sm" onclick="Screens._editMeasure('${m.id}')">Editar</button></div>
+        <div class="rowbtns"><button class="btn ghost sm" onclick="Screens._editMeasure('${m.id}')">Editar</button><button class="btn ghost sm" onclick="PMA.ficha('${m.id}')">Ficha completa (PMA)</button></div>
       </div></div>`;
   }).join('') : '<div class="empty" style="padding:26px"><p class="muted">Todavía no defines medidas. Empieza por los impactos prioritarios.</p></div>';
 
@@ -2839,7 +2899,7 @@ Screens._editMeasure=function(id){
      <div class="field"><label>Descripción</label><textarea id="m_desc" placeholder="En qué consiste la medida">${esc(m.description)}</textarea></div>
      <div class="grid2">
        <div class="field"><label>Objetivo / meta</label><input type="text" id="m_obj" value="${esc(m.objective)}"></div>
-       <div class="field"><label>Indicador de éxito</label><input type="text" id="m_ind" value="${esc(m.indicator)}"></div>
+       <div class="field"><label>Indicador de éxito</label><input type="text" id="m_ind" value="${esc(m.indicator||m.ie||'')}"></div>
      </div>
      <div class="field"><label>Impactos que atiende</label><div class="opts" style="flex-direction:column">
        ${valued.map(i=>`<label class="opt ${(m.impact_ids||[]).includes(i.id)?'sel':''}" style="width:100%;justify-content:flex-start" onclick="this.classList.toggle('sel');this.dataset.on=this.classList.contains('sel')" data-id="${i.id}" data-on="${(m.impact_ids||[]).includes(i.id)}"><span class="ov">${(m.impact_ids||[]).includes(i.id)?'☑':'☐'}</span><span class="ol">${esc(i.name)}</span></label>`).join('')}
@@ -2851,8 +2911,18 @@ Screens._saveMeasure=function(mid,isEdit){
   const data={name:$('#m_name').value.trim(),type:$('#m_type').value,responsible:$('#m_resp').value,
     description:$('#m_desc').value,objective:$('#m_obj').value,indicator:$('#m_ind').value,impact_ids:ids};
   if(!data.name){Toast.show('Ponle nombre a la medida','warn');return;}
-  if(isEdit){const m=DB.measures.find(x=>x.id===mid);Object.assign(m,data);}
-  else{DB.measures.push({id:mid,...data});}
+  data.ie=data.indicator;   // el "indicador de éxito" es el indicador de eficacia del PMA
+  if(isEdit){
+    const m=DB.measures.find(x=>x.id===mid);
+    // Solo cambia la categoría si el usuario cambió el tipo (conserva p. ej. "Control" o "Contingencia")
+    if(m.type!==data.type || !m.cat){ data.cat=TYPE2CAT[data.type]||'Mitigación'; data.out=CatalogMed.outCode(data.cat); }
+    Object.assign(m,data);
+  } else {
+    const cat=TYPE2CAT[data.type]||'Mitigación';
+    const im=ids.length?Data.impact(ids[0]):null; const a=im?Data.activity(im.activity_id):null; const st=a?Data.stageOf(a):null;
+    DB.measures.push(Object.assign(measureDefaults(),{id:mid,seq:Persist._nextSeq(),cat,out:CatalogMed.outCode(cat),
+      stage:st?st.name:'',activity_id:im?im.activity_id:'',receptor:im?(im.receptor||''):'',created_at:nowISO()},data));
+  }
   audit(isEdit?'update':'create','measure',data.name);touch();Modal.close();Router.refresh();Toast.show('Medida guardada');
 };
 Screens._delMeasure=function(id){confirmBox('¿Eliminar esta medida?',()=>{DB.measures=DB.measures.filter(m=>m.id!==id);touch();Router.refresh();},'Eliminar',true);};
@@ -3300,7 +3370,7 @@ const Results={
     const lines=[head.join(',')]; const tot={c:0,m:0,s:0,cr:0,p:0,neu:0};
     rows.forEach(r=>{['c','m','s','cr','p','neu'].forEach(k=>tot[k]+=r[k]);lines.push([`"${(r.label||'').replace(/"/g,'""')}"`,r.c,r.m,r.s,r.cr,...(anyNeu?[r.neu]:[]),r.p,rs(r)].join(','));});
     lines.push(['SUMA',tot.c,tot.m,tot.s,tot.cr,...(anyNeu?[tot.neu]:[]),tot.p,rs(tot)].join(','));
-    Export._dl(Export._base()+'_resumen_'+kind+'.csv','\ufeff'+lines.join('\r\n'));
+    Export._dl(Export._base()+'_resumen_'+kind+'.csv',lines.join('\r\n'));
   },
   // Versión SVG de la tabla resumen (cuadrícula) para exportar a PNG
   summaryTableSVG(title, headLabel, groupFn){
@@ -3367,6 +3437,13 @@ const Results={
 /* ============================================================
    11. PLAN DE MANEJO (PMA) — Fases 3–4: panel de impactos + ficha de medida
    ============================================================ */
+const TYPE2CAT={PREVENTION:'Prevención',MITIGATION:'Mitigación',CORRECTION:'Corrección',RESTORATION:'Restauración',COMPENSATION:'Compensación',MONITORING:'Seguimiento'};
+// Campos completos de una medida del proyecto (los usa el Plan de Manejo, sus fichas y exportaciones)
+function measureDefaults(){ return { measure_code:'', adapted:true, status:'ACTIVE', name:'', cat:'Mitigación', type:'MITIGATION', out:'M',
+  program_id:'', impact_ids:[], stage:'', activity_id:'', factor_code:'', receptor:'', location:'', responsible:'', objective:'',
+  procedure:'', materials:'', start:'', periodicity:'', frequency:'', term:'', schedule:'', cost:'', cost_unit:'', cost_src:'',
+  personnel:'', ic:'', icm:'', ie:'', iem:'', verification:'', evidence:'', threshold:'', corrective:'', alternative:'',
+  source:'', note:'', description:'', indicator:'' }; }
 const CAT2TYPE={'Evitación':'PREVENTION','Prevención':'PREVENTION','Mitigación':'MITIGATION','Corrección':'CORRECTION','Restauración':'RESTORATION','Compensación':'COMPENSATION','Control':'MITIGATION','Seguimiento':'MONITORING','Contingencia':'PREVENTION','Potenciación':'MONITORING'};
 const PMA={
   _tab:'impactos',
@@ -3385,7 +3462,7 @@ const PMA={
     if(m){ if(!m.impact_ids.includes(impId)){ m.impact_ids.push(impId); touch(); } PMA.ficha(m.id); return; }
     const prog=CatalogMed.programOfMeasure(code);
     const f=Data.factor(im.factor_id); const a=Data.activity(im.activity_id); const st=a?Data.stageOf(a):null;
-    m={ id:UID('MED'), seq:(DB.measures.length+1), measure_code:code, adapted:false, status:'ACTIVE', created_at:nowISO(),
+    m={ id:UID('MED'), seq:Persist._nextSeq(), measure_code:code, adapted:false, status:'ACTIVE', created_at:nowISO(),
       name:master?master.n:'', cat:master?master.tipo:'Mitigación', type:CAT2TYPE[master?master.tipo:'Mitigación']||'MITIGATION',
       out:CatalogMed.outCode(master?master.tipo:'Mitigación'), program_id:prog?prog.c:'', impact_ids:[impId],
       stage:st?st.name:'', activity_id:im.activity_id, factor_code:(f&&f.code)||'', receptor:im.receptor||'', location:'',
@@ -3400,7 +3477,7 @@ const PMA={
   },
   addCustom(impId){
     const im=impId?Data.impact(impId):null; const f=im?Data.factor(im.factor_id):null; const a=im?Data.activity(im.activity_id):null; const st=a?Data.stageOf(a):null;
-    const m={ id:UID('MED'), seq:(DB.measures.length+1), measure_code:'', adapted:true, status:'ACTIVE', created_at:nowISO(),
+    const m={ id:UID('MED'), seq:Persist._nextSeq(), measure_code:'', adapted:true, status:'ACTIVE', created_at:nowISO(),
       name:'', cat:'Mitigación', type:'MITIGATION', out:'M', program_id:'', impact_ids:im?[im.id]:[],
       stage:st?st.name:'', activity_id:im?im.activity_id:'', factor_code:(f&&f.code)||'', receptor:im?im.receptor:'', location:'',
       responsible:'', objective:'', procedure:'', materials:'', start:'', periodicity:'', frequency:'', term:'', schedule:'',
@@ -4373,7 +4450,6 @@ const Export={
     H.push('<tr><td bgcolor="#f1f3f5" style="font-weight:bold">Σ actividad</td>'+acts.map(a=>`<td bgcolor="#f1f3f5" style="text-align:center;font-weight:bold">${colSum[a.id]||''}</td>`).join('')+`<td bgcolor="#e7ecf1" style="text-align:center;font-weight:bold">${grand||''}</td></tr>`);
     H.push('</table>');
     Export._dl(Export._base()+'_matriz_interaccion.xls',PMAExport._xls('Matriz de interacción',H.join('')),'application/vnd.ms-excel');
-    Toast.show('Excel de la matriz descargado');
   }
 };
 
@@ -4456,8 +4532,8 @@ const ClassMatrix={
     leg.forEach(([code,b,lab])=>{g+=`<rect x="${lx}" y="${ly-11}" width="14" height="14" fill="${CM_BG[b]}"/><text x="${lx+18}" y="${ly}" style="font-size:10px;fill:#3A3F45;font-family:system-ui,Arial">${code} · ${lab}</text>`;lx+=Math.round((code.length+lab.length)*6.0)+40;});
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${g}</svg>`;
   },
-  dlXls(){ if(!DB.activities.length||!DB.factors.length){Toast.show('Faltan actividades o factores','warn');return;} Export._dl(Export._base()+'_matriz_significancia.xls',PMAExport._xls('Matriz de significancia',this.htmlTable()),'application/vnd.ms-excel'); Toast.show('Excel de significancia descargado'); },
-  dlCsv(){ if(!DB.factors.length){Toast.show('Sin factores','warn');return;} Export._dl(Export._base()+'_matriz_significancia.csv',Export._csv(this.csvRows())); Toast.show('CSV descargado'); },
+  dlXls(){ if(!DB.activities.length||!DB.factors.length){Toast.show('Faltan actividades o factores','warn');return;} Export._dl(Export._base()+'_matriz_significancia.xls',PMAExport._xls('Matriz de significancia',this.htmlTable()),'application/vnd.ms-excel'); },
+  dlCsv(){ if(!DB.factors.length){Toast.show('Sin factores','warn');return;} Export._dl(Export._base()+'_matriz_significancia.csv',Export._csv(this.csvRows())); },
   async dlPng(){ if(!DB.activities.length||!DB.factors.length){Toast.show('Faltan actividades o factores','warn');return;} try{Toast.show('Generando imagen…','info');const blob=await ImgExport.svgToPngBlob(this.svg(),2.4);ImgExport.downloadBlob(blob,Export._base()+'_matriz_significancia.png');Toast.show('Imagen de significancia descargada');}catch(e){Toast.show('No se pudo generar la imagen','err');} }
 };
 
@@ -4520,6 +4596,7 @@ const Report={
   },
   fmtCls(cls){const M=getMethod();const ci=M.clsInfo(cls);return `<span class="chip ${ci.cls}">${ci.label}</span>`;},
   build(){
+    Report._n=0;
     const M=getMethod(); const p=DB.project; const s=computeStats();
     const dt=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
     // secciones
@@ -4540,7 +4617,9 @@ const Report={
       ${Report._conclusions(M,s)}
     </div>`;
   },
-  _h(n,t){return `<h2 class="rsec"><span class="rn">${n}</span>${esc(t)}</h2>`;},
+  // Numeración automática: cada sección que realmente se imprime toma el siguiente número.
+  _n:0,
+  _h(n,t){return `<h2 class="rsec"><span class="rn">${++Report._n}</span>${esc(t)}</h2>`;},
   _cover(p,M,dt){
     return `<div class="rcover">
       <img class="rc-logo" src="${VALIA_LOGO}" alt="VALIA">
@@ -4753,6 +4832,7 @@ function boot(){
   $('#fileInput').addEventListener('change',(e)=>{ if(e.target.files[0]) Persist.loadFile(e.target.files[0]); });
   // atajo guardar
   document.addEventListener('keydown',(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();Persist.save();} });
+  Persist.startAuto(); Persist._status();
 }
 document.addEventListener('DOMContentLoaded',boot);
 </script>
