@@ -335,7 +335,8 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     </div>
     <button class="tbtn" onclick="Persist.newProject()">✦ Nuevo</button>
     <button class="tbtn" onclick="Persist.open()">↥ Abrir</button>
-    <button class="tbtn pri" onclick="Persist.save()">↧ Guardar</button>
+    <button class="tbtn" onclick="Persist.saveAs()" title="Elegir carpeta y nombre del archivo">↧ Guardar como…</button>
+    <button class="tbtn pri" onclick="Persist.save()" title="Actualizar el archivo ya guardado">💾 Guardar</button>
   </div>
 
   <!-- Nav -->
@@ -1277,22 +1278,81 @@ const Reco={
 const Persist={
   autosave(){ try{ localStorage.setItem('valia:autosave', JSON.stringify(DB)); }catch(e){} },
   restore(){ try{ const s=localStorage.getItem('valia:autosave'); if(s) return JSON.parse(s);}catch(e){} return null; },
-  save(){
+  // --- Guardado en archivo real (File System Access API con respaldo a descarga) ---
+  _fileHandle:null,   // referencia al archivo elegido con "Guardar como…"; permite que "Guardar" lo actualice
+  _suggestedName(){ return (DB&&(DB.project.code||DB.project.name)||'proyecto').replace(/[^\w\-]+/g,'_')+'.valia.json'; },
+  _hasFSA(){ return (typeof window!=='undefined') && ('showSaveFilePicker' in window); },
+  async _ensureWritable(h){
+    if(!h || !h.queryPermission) return true;
+    const opt={mode:'readwrite'};
+    if(await h.queryPermission(opt)==='granted') return true;
+    try{ return (await h.requestPermission(opt))==='granted'; }catch(e){ return false; }
+  },
+  async _writeHandle(h){
+    const w=await h.createWritable();
+    await w.write(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}));
+    await w.close();
+  },
+  _downloadFallback(){
+    const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+    const a=el('a',{href:URL.createObjectURL(blob),download:this._suggestedName()});
+    document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href);},0);
+  },
+  // "Guardar como…": abre el explorador para elegir ruta y nombre; recuerda el archivo para futuros "Guardar".
+  async saveAs(){
     if(!DB){Toast.show('No hay proyecto activo','warn');return;}
     DB.project.updated_at=nowISO();
-    const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
-    const a=el('a',{href:URL.createObjectURL(blob),download:(DB.project.code||DB.project.name||'proyecto').replace(/[^\w\-]+/g,'_')+'.valia.json'});
-    document.body.appendChild(a);a.click();a.remove();
-    Toast.show('Proyecto guardado');
+    if(this._hasFSA()){
+      try{
+        const h=await window.showSaveFilePicker({
+          suggestedName:this._suggestedName(),
+          types:[{description:'Proyecto VALIA',accept:{'application/json':['.json']}}]
+        });
+        await this._writeHandle(h);
+        this._fileHandle=h; this.autosave();
+        Toast.show('Guardado: '+(h.name||this._suggestedName()));
+        if(typeof Nav!=='undefined')Nav.render();
+      }catch(e){ if(e&&e.name==='AbortError')return; Toast.show('No se pudo guardar: '+(e.message||e),'err'); }
+    } else {
+      this._downloadFallback();
+      Toast.show('Proyecto descargado (tu navegador no permite elegir carpeta)','info');
+    }
   },
-  open(){ $('#fileInput').value='';$('#fileInput').click(); },
-  loadFile(file){
+  // "Guardar": actualiza el archivo previamente elegido, sin volver a preguntar.
+  // Si aún no se ha elegido archivo (o el navegador no lo soporta), se comporta como "Guardar como…".
+  async save(){
+    if(!DB){Toast.show('No hay proyecto activo','warn');return;}
+    DB.project.updated_at=nowISO();
+    if(this._hasFSA() && this._fileHandle){
+      try{
+        if(!await this._ensureWritable(this._fileHandle)){ Toast.show('Permiso denegado; usa "Guardar como…"','warn'); return; }
+        await this._writeHandle(this._fileHandle); this.autosave();
+        Toast.show('Cambios guardados en '+(this._fileHandle.name||'el archivo'));
+      }catch(e){ Toast.show('No se pudo actualizar; intenta "Guardar como…": '+(e.message||e),'err'); }
+    } else {
+      return this.saveAs();
+    }
+  },
+  async open(){
+    // Con soporte: el explorador devuelve un "handle" y así "Guardar" actualizará el archivo abierto.
+    if(this._hasFSA() && ('showOpenFilePicker' in window)){
+      try{
+        const [h]=await window.showOpenFilePicker({types:[{description:'Proyecto VALIA',accept:{'application/json':['.json']}}]});
+        const file=await h.getFile();
+        this.loadFile(file,h);
+        return;
+      }catch(e){ if(e&&e.name==='AbortError')return; /* si falla, cae al selector clásico */ }
+    }
+    $('#fileInput').value='';$('#fileInput').click();
+  },
+  loadFile(file,handle){
     const r=new FileReader();
     r.onload=()=>{
       try{
         const d=JSON.parse(r.result);
         if(!d.schema||!d.project){throw new Error('formato');}
         DB=migrate(d); ACTIVE_METHOD=DB.method||'CONESA-STD-01';
+        Persist._fileHandle=handle||null;   // recuerda el archivo abierto (si lo hay) para "Guardar"
         recalcAll(); Nav.render(); Router.go('project'); Persist.autosave();
         Toast.show('Proyecto cargado: '+(DB.project.name||DB.project.code||'sin nombre'));
       }catch(e){ Toast.show('Archivo no válido','err'); }
@@ -1300,7 +1360,7 @@ const Persist={
     r.readAsText(file);
   },
   newProject(){
-    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD;
+    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD; Persist._fileHandle=null;
       Nav.render(); Router.go('project'); Persist.autosave(); Toast.show('Nuevo proyecto creado'); };
     if(DB && (DB.impacts.length||DB.project.name)) confirmBox('¿Crear un proyecto nuevo? Se perderán los cambios no guardados en archivo.',go,'Crear nuevo');
     else go();
