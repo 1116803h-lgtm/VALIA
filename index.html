@@ -27,6 +27,7 @@
   --line:#DAD6CD; --line-2:#EAE7E0;
   --brand:#0E5E5A; --brand-d:#0A4744; --brand-l:#E3EFED;
   --pos:#25638F; --pos-l:#E4EEF5;
+  --pos1:#4A8CC4; --pos2:#2F75B5; --pos3:#1F5E9E; --pos4:#0F3F73;
   --compat:#3B8C4E; --compat-l:#E7F1E9;
   --moder:#B98700; --moder-l:#F6EED8;
   --sever:#CF611B; --sever-l:#F8E7D9;
@@ -96,6 +97,14 @@ a{color:var(--brand)}
 .card>.bd{padding:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.crit.posmode .opt.sel{background:#2A72B5;border-color:#2A72B5;color:#fff}
+.crit.posmode .opt.sel .ov,.crit.posmode .opt.sel .ol,.crit.posmode .opt.sel .ol-orig{color:#fff}
+.crit.posmode.done .selval{background:#DCEBF7;color:#1F5E93}
+.crit.posmode .code{background:#DCEBF7;color:#1F5E93}
+.crit.posmode .help{background:#EEF5FB;border-left-color:#2A72B5}
+.ol-orig{display:block;font-size:10px;color:var(--ink-3);font-weight:400;margin-top:1px}
+.pos-tag{display:inline-block;background:#DCEBF7;color:#1F5E93;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;margin-right:4px}
+.alert.pos-note{background:#EEF5FB;border-color:#BFD8EE;margin-bottom:14px}.alert.pos-note .ai{color:#2A72B5}
 .team-row{display:grid;grid-template-columns:26px 1.5fr 1fr 1fr;gap:10px;align-items:end;margin-bottom:4px}
 .team-row .field{margin-bottom:8px}
 .team-n{width:24px;height:24px;border-radius:50%;background:var(--brand-l);color:var(--brand-d);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
@@ -143,6 +152,8 @@ textarea{resize:vertical;min-height:64px;line-height:1.45}
 .chip.sever{background:var(--sever-l);color:var(--sever)}
 .chip.critic{background:var(--critic-l);color:var(--critic)}
 .chip.pos{background:var(--pos-l);color:var(--pos)}
+.chip.pos1{background:#DCEBF7;color:#1F5E93}.chip.pos2{background:#A9CDEB;color:#0F3F6B}
+.chip.pos3{background:#2F75B5;color:#fff}.chip.pos4{background:#0F3F73;color:#fff}
 .chip.neg{background:#F0ECE4;color:var(--ink-2)}
 .chip.gray{background:var(--line-2);color:var(--ink-2)}
 .chip.stage{background:var(--brand-l);color:var(--brand-d)}
@@ -429,39 +440,55 @@ registerMethod({
     {id:'COMPATIBLE',label:'Compatible',cls:'compat',min:0,max:25},
     {id:'MODERADO',label:'Moderado',cls:'moder',min:25,max:50},
     {id:'SEVERO',label:'Severo',cls:'sever',min:50,max:75},
-    {id:'CRITICO',label:'Crítico',cls:'critic',min:75,max:Infinity}
+    {id:'CRITICO',label:'Crítico',cls:'critic',min:75,max:Infinity},
+    // Impactos positivos: mismos rangos, nombres y tonos de azul propios
+    {id:'POS_BAJO',label:'Positivo bajo',cls:'pos1',min:0,max:25,pos:true,color:'#A9D2EC'},
+    {id:'POS_MEDIO',label:'Positivo medio',cls:'pos2',min:25,max:50,pos:true,color:'#5BA4D6'},
+    {id:'POS_ALTO',label:'Positivo alto',cls:'pos3',min:50,max:75,pos:true,color:'#2A72B5'},
+    {id:'POS_MUY_ALTO',label:'Positivo muy alto',cls:'pos4',min:75,max:Infinity,pos:true,color:'#12406E'}
   ],
+  posClasses:['POS_BAJO','POS_MEDIO','POS_ALTO','POS_MUY_ALTO'],
   severeIds:['SEVERO','CRITICO'],
   // Definición completa de criterios y escalas (configurable / versionado)
   criteria:[
     {code:'IN',name:'Intensidad',weight:3,
+     pos:{ev:'Grado de mejora que la acción produce en el factor.',no:'No confundir con el área beneficiada (eso es Extensión).',labels:{1:'Mejora apenas perceptible',2:'Mejora apreciable de alguna característica',4:'Mejora notable del estado del factor',8:'Mejora sustancial; recupera buena parte de su calidad',12:'Condición óptima o se elimina la causa del deterioro'}},
      help:{ev:'Grado de incidencia (fuerza) de la acción sobre el factor en el ámbito donde actúa.',no:'No confundir con la extensión del área afectada.'},
      scale:[{v:1,l:'Baja'},{v:2,l:'Media'},{v:4,l:'Alta'},{v:8,l:'Muy alta'},{v:12,l:'Total'}]},
     {code:'EX',name:'Extensión',weight:2,modifier:{v:4,l:'Ubicación crítica (+4)',reason:'critical_location_description'},
+     pos:{ev:'Parte del entorno o de la población que recibe el beneficio.',no:'No mide cuánto mejora (eso es Intensidad).',mod:'Ubicación prioritaria (+4)',modHelp:'El beneficio cae en un sitio de alta relevancia: comunidad con carencia del servicio, ANP, cauce o suelo degradado.'},
      help:{ev:'Área de influencia del impacto respecto del entorno considerado.',no:'No mide la fuerza (eso es Intensidad).'},
      scale:[{v:1,l:'Puntual'},{v:2,l:'Parcial'},{v:4,l:'Extensa'},{v:8,l:'Total'}]},
     {code:'MO',name:'Momento',weight:1,modifier:{v:4,l:'Momento crítico (+4)',reason:'critical_timing_reason'},
+     pos:{ev:'Tiempo que tarda en notarse el beneficio. Largo >5 años; Medio 1–5; Inmediato <1 año.',no:'No mide cuánto dura el beneficio (eso es Persistencia).',mod:'Momento oportuno (+4)',modHelp:'El beneficio llega cuando más se necesita: estiaje, temporada de reproducción, emergencia sanitaria…'},
      help:{ev:'Tiempo entre la aparición de la acción y el inicio del efecto. Largo >5 años; Medio 1–5; Inmediato <1 año.',no:'No mide la duración del efecto (eso es Persistencia).'},
      scale:[{v:1,l:'Largo plazo'},{v:2,l:'Medio plazo'},{v:4,l:'Inmediato'}]},
     {code:'PE',name:'Persistencia',weight:1,
+     pos:{ev:'Cuánto dura el beneficio una vez que aparece. Fugaz <1 año; Temporal 1–10; Permanente >10.',no:'No indica si el beneficio se sostiene solo (eso es RV y MC).'},
      help:{ev:'Tiempo que permanece el efecto desde su aparición. Fugaz <1 año; Temporal 1–10; Permanente >10.',no:'No indica si puede recuperarse.'},
      scale:[{v:1,l:'Fugaz'},{v:2,l:'Temporal'},{v:4,l:'Permanente'}]},
     {code:'RV',name:'Reversibilidad',weight:1,
+     pos:{ev:'¿El beneficio se pierde solo, por procesos NATURALES?',no:'No considere la intervención humana — eso es Recuperabilidad.',labels:{1:'Se pierde naturalmente en menos de 1 año',2:'Se pierde naturalmente en 1 a 10 años',4:'Se consolida; no se pierde de forma natural'}},
      help:{ev:'Capacidad del factor de volver a su estado previo por procesos NATURALES.',no:'No considere medidas humanas — eso es Recuperabilidad.'},
      scale:[{v:1,l:'Corto plazo'},{v:2,l:'Medio plazo'},{v:4,l:'Irreversible'}]},
     {code:'SI',name:'Sinergia',weight:1,
+     pos:{ev:'¿El beneficio se potencia al coincidir con otros efectos positivos?',no:'No es acumulación en el tiempo.',labels:{1:'El beneficio actúa solo',2:'Se refuerza con otros beneficios del proyecto o de la zona',4:'El beneficio conjunto supera ampliamente la suma'}},
      help:{ev:'Refuerzo del efecto por acción conjunta con otros impactos (mayor que la suma individual).',no:'No es acumulación en el tiempo.'},
      scale:[{v:1,l:'Sin sinergismo'},{v:2,l:'Sinérgico'},{v:4,l:'Muy sinérgico'}]},
     {code:'AC',name:'Acumulación',weight:1,
+     pos:{ev:'¿El beneficio crece con el tiempo o con la repetición de la acción?',no:'No es sinergia entre efectos distintos.',labels:{1:'El beneficio no aumenta',4:'Crece progresivamente (recarga, cobertura vegetal, capacidades locales)'}},
      help:{ev:'Incremento progresivo del efecto al persistir o repetirse la acción.',no:'No es sinergia entre impactos distintos.'},
      scale:[{v:1,l:'Simple'},{v:4,l:'Acumulativo'}]},
     {code:'EF',name:'Efecto',weight:1,
+     pos:{ev:'¿El beneficio lo produce la acción directamente o a través de otro efecto?',no:'—'},
      help:{ev:'Relación causa–efecto. Directo: acción→impacto. Indirecto: acción→intermedio→impacto.',no:'—'},
      scale:[{v:1,l:'Indirecto'},{v:4,l:'Directo'}]},
     {code:'PR',name:'Periodicidad',weight:1,
+     pos:{ev:'Regularidad con que se presenta el beneficio.',no:'—'},
      help:{ev:'Regularidad de manifestación del efecto.',no:'—'},
      scale:[{v:1,l:'Irregular'},{v:2,l:'Periódico'},{v:4,l:'Continuo'}]},
     {code:'MC',name:'Recuperabilidad',weight:1,
+     pos:{ev:'¿El beneficio depende de que alguien lo sostenga (intervención HUMANA)?',no:'No es la pérdida natural — eso es Reversibilidad.',labels:{1:'Se pierde en cuanto cesa la operación o el mantenimiento',2:'Requiere mantenimiento o apoyo durante varios años',4:'Requiere apoyo mínimo; parcialmente autosostenido',8:'Autosostenido; no depende de intervención humana'}},
      help:{ev:'Posibilidad de reconstruir el factor mediante intervención HUMANA / medidas correctoras.',no:'No es recuperación natural — eso es Reversibilidad.'},
      scale:[{v:1,l:'Inmediata'},{v:2,l:'Medio plazo'},{v:4,l:'Mitigable'},{v:8,l:'Irrecuperable'}]}
   ],
@@ -493,7 +520,7 @@ registerMethod({
     const p={IN,EX,MO,PE,RV,SI,AC,EF,PR,MC};
     return {
       score, abs, N, contrib,
-      cls:this.classify(abs),
+      cls:this.classify(abs,nature),
       parts:p,
       memory:{
         top:'I = N (3·IN + 2·EX + MO + PE + RV + SI + AC + EF + PR + MC)',
@@ -506,8 +533,9 @@ registerMethod({
       }
     };
   },
-  classify(abs){
-    const c=this.classes.find(k=>abs>=k.min&&abs<k.max)||this.classes[this.classes.length-1];
+  classify(abs,nature){
+    const pos=nature==='POS'; const set=this.classes.filter(k=>!!k.pos===pos);
+    const c=set.find(k=>abs>=k.min&&abs<k.max)||set[set.length-1];
     return c.id;
   },
   clsInfo(id){ return this.classes.find(c=>c.id===id)||this.classes[0]; },
@@ -530,7 +558,9 @@ registerMethod({
   },
   explain(cr,nature,res){
     const top=Object.entries(res.contrib).sort((a,b)=>b[1]-a[1]).slice(0,3)
-      .map(([k])=>({IN:'alta intensidad',EX:'amplia extensión',MO:'momento de aparición',PE:'carácter persistente',RV:'baja reversibilidad natural',SI:'sinergia con otros efectos',AC:'acumulación en el tiempo',EF:'efecto directo',PR:'periodicidad continua',MC:'difícil recuperabilidad'}[k]));
+      .map(([k])=>(nature==='POS'
+        ?{IN:'alto grado de mejora',EX:'amplia cobertura del beneficio',MO:'pronta manifestación',PE:'beneficio duradero',RV:'beneficio que se consolida',SI:'potenciación con otros beneficios',AC:'beneficio que crece en el tiempo',EF:'beneficio directo',PR:'beneficio continuo',MC:'beneficio autosostenido'}
+        :{IN:'alta intensidad',EX:'amplia extensión',MO:'momento de aparición',PE:'carácter persistente',RV:'baja reversibilidad natural',SI:'sinergia con otros efectos',AC:'acumulación en el tiempo',EF:'efecto directo',PR:'periodicidad continua',MC:'difícil recuperabilidad'})[k]);
     const clsL=this.clsInfo(res.cls).label.toLowerCase();
     const nat=nature==='POS'?'positivo':'negativo';
     return `El impacto resulta ${nat} y de importancia ${clsL} (|I| = ${res.abs}), explicado principalmente por ${top.join(', ')}.`;
@@ -538,6 +568,16 @@ registerMethod({
   // Reglas de consistencia (advierten, no bloquean)
   consistency(cr,impact){
     const out=[]; const val=(c)=>cr[c]?cr[c].value:null; const mod=(c)=>cr[c]?cr[c].modifier:0;
+    if(impact&&impact.nature==='POS'){
+      if(val('PE')===4 && val('RV')===1) out.push({lvl:'warn',t:'Beneficio permanente que, sin embargo, se pierde naturalmente en menos de un año. Combinación contradictoria — revise PE o RV.'});
+      if(val('RV')===4 && val('MC')===1) out.push({lvl:'warn',t:'El beneficio se consolida naturalmente, pero se pierde en cuanto cesa la intervención humana. Revise: probablemente MC debe ser mayor.'});
+      if(val('EF')===1 && !impact.causal_mechanism) out.push({lvl:'warn',t:'Beneficio indirecto sin mecanismo causal descrito. Registre el efecto intermedio (Acción → intermedio → beneficio).'});
+      if(val('SI')>=2) out.push({lvl:'info',t:'Sinergia ≥ 2: indique con qué otros beneficios se potencia.'});
+      if(val('AC')===4) out.push({lvl:'info',t:'Acumulativo: describa cómo crece el beneficio con el tiempo en la justificación de AC.'});
+      if(mod('EX')===4) out.push({lvl:'info',t:'Ubicación prioritaria (+4): explique por qué el sitio hace más valioso el beneficio (carencia del servicio, ANP, área degradada…).'});
+      if(mod('MO')===4) out.push({lvl:'info',t:'Momento oportuno (+4): indique por qué el beneficio llega cuando más se necesita.'});
+      return out;
+    }
     if(val('PE')===4 && val('RV')===1) out.push({lvl:'warn',t:'Persistencia permanente con reversibilidad natural a corto plazo. Combinación poco habitual — verifique la justificación.'});
     if(val('RV')===4 && val('MC')===1) out.push({lvl:'warn',t:'Factor naturalmente irreversible pero recuperable de inmediato por intervención humana. Puede ser válido; documente cómo.'});
     if(val('EF')===1 && (!impact||!impact.causal_mechanism)) out.push({lvl:'warn',t:'Efecto indirecto sin mecanismo causal descrito. Registre al menos un efecto intermedio (Acción → intermedio → impacto).'});
@@ -1016,7 +1056,11 @@ function el(tag,attrs,html){const e=document.createElement(tag);if(attrs)for(con
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function num(n,d=2){return (n==null||n==='')?'—':Number(n).toLocaleString('es-MX',{maximumFractionDigits:d});}
 // Mapea una clase de significancia a su variable CSS de color (incluye clases RIAM pos/gray)
-function clsVar(cls){return ({compat:'compat',moder:'moder',sever:'sever',critic:'critic',pos:'pos',gray:'ink-3'})[cls]||'ink';}
+function clsVar(cls){return ({compat:'compat',moder:'moder',sever:'sever',critic:'critic',pos:'pos',pos1:'pos1',pos2:'pos2',pos3:'pos3',pos4:'pos4',gray:'ink-3'})[cls]||'ink';}
+// Clases positivas graduadas (Conesa): colores de relleno para gráficas y matriz
+const POS_SHADES={pos1:{bg:'#A9D2EC',fg:'#0F3554',code:'+B'},pos2:{bg:'#5BA4D6',fg:'#0B2E4D',code:'+M'},pos3:{bg:'#2A72B5',fg:'#ffffff',code:'+A'},pos4:{bg:'#12406E',fg:'#ffffff',code:'+MA'}};
+const posSplit=(M)=>!!(M&&M.posClasses);
+function scoreColor(M,imp,as){ if(!as||!as.complete)return ''; const ci=M.clsInfo(as.cls)||{}; return /^pos/.test(ci.cls||'')?`color:var(--${clsVar(ci.cls)})`:''; }
 // Formatea el score según el método (Conesa/RIAM: entero con signo; Bojórquez: decimal 0–1 sin signo)
 function fmtScore(M,v){ return (M&&M.fmtScore)?M.fmtScore(v):((v>0?'+':'')+v); }
 // ¿El impacto es negativo bajo el método activo? RIAM: por el signo del score; los demás: por la naturaleza del impacto
@@ -2612,7 +2656,7 @@ Screens.impacts=function(){
     const a=Data.activity(i.activity_id), f=Data.factor(i.factor_id);
     const st=a?Data.stageOf(a):null, comp=a?Data.componentOf(a):null;
     const as=Data.initialAssess(i.id); const valued=!!(as&&as.complete);
-    const clsRank=valued?M.classes.findIndex(c=>c.id===as.cls):-1;
+    const clsRank=valued?((M.clsInfo(as.cls)||{}).pos?-0.5:M.classes.findIndex(c=>c.id===as.cls)):-1;
     const ci=valued&&as.cls?M.clsInfo(as.cls):null;
     const flag=isValia?VCore.flagFor(i):{type:'',route:''};
     return { i,a,f,st,comp,as,valued,ci,flag,
@@ -2758,6 +2802,7 @@ Screens.assess=function(){
         <span class="desc"><span class="mono">${done}/${M.criteria.length}</span> evaluados</span></div>
         <div class="bd">
           <div class="progress" style="margin-bottom:16px"><div class="pf" style="width:${done/M.criteria.length*100}%"></div></div>
+          ${(imp.nature==='POS'&&M.criteria.some(c=>c.pos))?`<div class="alert pos-note"><span class="ai">▲</span><span><b>Impacto positivo.</b> Cada criterio se lee como <i>beneficio</i>: un valor más alto significa un beneficio más importante. Los valores, la fórmula y los rangos de ${esc(M.name)} no cambian; solo cambia la lectura de cada nivel (la etiqueta original aparece en gris).</span></div>`:''}
           ${critHTML}
         </div>
       </div>
@@ -2768,15 +2813,20 @@ Screens.assess=function(){
     </div>
   </div>`;
 };
+// Etiqueta de un nivel según la naturaleza (lectura positiva cuando el método la define)
+function critLabel(c,v,nature){ const s=(c.scale||[]).find(x=>x.v===v); if(!s)return ''; return (nature==='POS'&&c.pos&&c.pos.labels&&c.pos.labels[v])||s.l; }
 Assess._criterion=function(c,as){
   const e=as.criteria[c.code]||{};
   const isDone=e.value!=null;
   const finalVal=(e.value||0)+(e.modifier||0);
-  const opts=c.scale.map(s=>`<label class="opt ${e.value===s.v?'sel':''}" onclick="Assess._pick('${c.code}',${s.v})"><span class="ov">${s.v}</span><span class="ol">${esc(s.l)}</span></label>`).join('');
+  const imp=Data.impact(as.impact_id); const P=(imp&&imp.nature==='POS'&&c.pos)?c.pos:null;
+  const help=P?{ev:P.ev,no:P.no}:c.help;
+  const opts=c.scale.map(s=>{const pl=P&&P.labels&&P.labels[s.v];
+    return `<label class="opt ${e.value===s.v?'sel':''}" onclick="Assess._pick('${c.code}',${s.v})"><span class="ov">${s.v}</span><span class="ol">${esc(pl||s.l)}${pl?`<span class="ol-orig">${esc(s.l)}</span>`:''}</span></label>`;}).join('');
   const modHTML=c.modifier?`<div class="modext">
     <input type="checkbox" id="mod_${c.code}" ${e.modifier===c.modifier.v?'checked':''} onchange="Assess._mod('${c.code}',this.checked?${c.modifier.v}:0)">
-    <label for="mod_${c.code}" style="margin:0;cursor:pointer">${esc(c.modifier.l)}</label></div>`:'';
-  return `<div class="crit ${isDone?'done':''}" id="crit_${c.code}">
+    <label for="mod_${c.code}" style="margin:0;cursor:pointer">${esc(P&&P.mod?P.mod:c.modifier.l)}${P&&P.modHelp?`<span class="muted small" style="display:block;font-weight:400">${esc(P.modHelp)}</span>`:''}</label></div>`:'';
+  return `<div class="crit ${isDone?'done':''} ${P?'posmode':''}" id="crit_${c.code}">
     <div class="chd" onclick="Assess._toggleCrit('${c.code}')">
       <span class="code">${c.code}</span><span class="cname">${esc(c.name)}</span>
       ${c.weight?`<span class="w">×${c.weight}</span>`:(c.group?`<span class="w">Grupo ${c.group}</span>`:'')}
@@ -2784,7 +2834,7 @@ Assess._criterion=function(c,as){
       <span class="chev">›</span>
     </div>
     <div class="cbd">
-      <div class="help"><b>Evalúa:</b> ${esc(c.help.ev)}${c.help.no!=='—'?` <span class="no">No evalúa:</span> ${esc(c.help.no)}`:''}</div>
+      <div class="help">${P?'<span class="pos-tag">▲ Lectura para impacto positivo</span> ':''}<b>Evalúa:</b> ${esc(help.ev)}${help.no!=='—'?` <span class="no">No evalúa:</span> ${esc(help.no)}`:''}</div>
       <div class="opts">${opts}</div>
       ${modHTML}
       <div class="field" style="margin-bottom:8px"><label>Justificación técnica <span class="req">*</span></label>
@@ -3014,7 +3064,7 @@ const Chart={
   bar(data,opt={}){ // data:[{label,value,color}]
     const rowH=30,padR=54,padT=10,padB=10;
     const longest=Math.max(1,...data.map(d=>String(d.label).length));
-    const padL=opt.padL||Math.min(340,Math.max(120,Math.round(longest*6.1)+14));
+    const padL=opt.padL||Math.min(340,Math.max(120,Math.round(longest*7.2)+18));
     const w=opt.w||(padL+(opt.plot||240)+padR);
     const h=padT+padB+data.length*rowH;
     const max=Math.max(1,...data.map(d=>d.value));
@@ -3356,8 +3406,10 @@ const Results={
     // Cubos canónicos de significancia (según naturaleza): C/M/S/CR + Positivo (+ Neutro si aplica).
     // Se usan en las gráficas para incluir los impactos positivos y mostrar siempre todas las clases, aun en cero.
     const canonDefs=[{key:'compat',label:'Compatible',color:Chart.colors.compat},{key:'moder',label:'Moderado',color:Chart.colors.moder},{key:'sever',label:'Severo',color:Chart.colors.sever},{key:'critic',label:'Crítico',color:Chart.colors.critic},{key:'pos',label:'Positivo',color:Chart.colors.pos}];
-    const _bkt=(x)=>{const c=(M.clsInfo(x.as.cls)||{}).cls;if(x.imp.nature==='POS'||c==='pos')return 'pos';if(c==='compat')return 'compat';if(c==='moder')return 'moder';if(c==='sever')return 'sever';if(c==='critic')return 'critic';return 'neu';};
-    const canonCount={compat:0,moder:0,sever:0,critic:0,pos:0,neu:0};s.valued.forEach(x=>{canonCount[_bkt(x)]++;});
+    const _split=posSplit(M);
+    if(_split){ canonDefs.pop(); M.posClasses.forEach(id=>{const ci=M.clsInfo(id);canonDefs.push({key:ci.cls,label:ci.label,color:ci.color});}); }
+    const _bkt=(x)=>{const c=(M.clsInfo(x.as.cls)||{}).cls;if(_split&&/^pos\d$/.test(c||''))return c;if(x.imp.nature==='POS'||c==='pos')return 'pos';if(c==='compat')return 'compat';if(c==='moder')return 'moder';if(c==='sever')return 'sever';if(c==='critic')return 'critic';return 'neu';};
+    const canonCount={compat:0,moder:0,sever:0,critic:0,pos:0,pos1:0,pos2:0,pos3:0,pos4:0,neu:0};s.valued.forEach(x=>{canonCount[_bkt(x)]++;});
     const canonCats=canonDefs.slice();if(canonCount.neu>0)canonCats.push({key:'neu',label:'Neutro',color:'#9AA0A6'});
     const canonDist=canonCats.map(c=>({label:c.label,value:canonCount[c.key]||0,color:c.color}));
     const stageMapC={};DB.stages.forEach(st=>stageMapC[st.id]={label:st.name,values:{}});
@@ -3367,7 +3419,7 @@ const Results={
     s.valued.forEach(x=>{const f=Data.factor(x.imp.factor_id);const k=(f&&f.medium)||'';if(medMapC[k]){const b=_bkt(x);medMapC[k].values[b]=(medMapC[k].values[b]||0)+1;}});
     const medRowsC=Object.values(medMapC).filter(r=>Object.keys(r.values).length);
     // Pastel de significancia (Negativo C/M/S/CR + Positivo P), incluye clases en cero
-    const sigPie=[{label:'Negativo C',value:canonCount.compat,color:Chart.colors.compat},{label:'Negativo M',value:canonCount.moder,color:Chart.colors.moder},{label:'Negativo S',value:canonCount.sever,color:Chart.colors.sever},{label:'Negativo CR',value:canonCount.critic,color:Chart.colors.critic},{label:'Positivo P',value:canonCount.pos,color:Chart.colors.pos}];
+    const sigPie=[{label:'Negativo C',value:canonCount.compat,color:Chart.colors.compat},{label:'Negativo M',value:canonCount.moder,color:Chart.colors.moder},{label:'Negativo S',value:canonCount.sever,color:Chart.colors.sever},{label:'Negativo CR',value:canonCount.critic,color:Chart.colors.critic},...(_split?M.posClasses.map(id=>{const ci=M.clsInfo(id);return {label:ci.label,value:canonCount[ci.cls],color:ci.color};}):[{label:'Positivo P',value:canonCount.pos,color:Chart.colors.pos}])];
     if(canonCount.neu>0)sigPie.push({label:'Neutro',value:canonCount.neu,color:'#9AA0A6'});
     // Pastel por componente ambiental (conteo total por componente presente)
     const _pal=['#1F6F8B','#4FA3C7','#2E7D46','#A7D3A0','#B5651D','#E8B48A','#B23FA0','#7E57C2','#C0392B','#E8842B','#0E5E5A','#6B7280','#3B8C4E','#B98700'];
@@ -3395,9 +3447,10 @@ const Results={
     const M=getMethod(); const s=computeStats(); const map={};
     s.valued.forEach(x=>{
       const g=groupFn(x); if(!g)return;
-      let b=map[g.key]; if(!b){b=map[g.key]={label:g.label,order:(g.order==null?999:g.order),c:0,m:0,s:0,cr:0,p:0,neu:0};}
+      let b=map[g.key]; if(!b){b=map[g.key]={label:g.label,order:(g.order==null?999:g.order),c:0,m:0,s:0,cr:0,p:0,pos1:0,pos2:0,pos3:0,pos4:0,neu:0};}
       const cls=(M.clsInfo(x.as.cls)||{}).cls;
-      if(x.imp.nature==='POS'||cls==='pos')b.p++;
+      if(/^pos\d$/.test(cls||'')){b.p++;b[cls]++;}
+      else if(x.imp.nature==='POS'||cls==='pos')b.p++;
       else if(cls==='compat')b.c++;
       else if(cls==='moder')b.m++;
       else if(cls==='sever')b.s++;
@@ -3407,18 +3460,22 @@ const Results={
     return Object.values(map).sort((a,b)=>a.order-b.order||((b.c+b.m+b.s+b.cr+b.p+b.neu)-(a.c+a.m+a.s+a.cr+a.p+a.neu)));
   },
   _sumStyle:'<style>.sumtbl{border-collapse:collapse;width:100%;font-size:13px}.sumtbl th,.sumtbl td{border:1px solid var(--line);padding:6px 9px;text-align:center}.sumtbl .lhead{background:#f1f3f5;text-align:left;vertical-align:middle;min-width:140px}.sumtbl .ghead{color:#fff;background:#5f6b7a;font-weight:700}.sumtbl .ghead.sumh,.sumtbl td.sumc{background:#eef1f4;color:var(--ink);font-weight:700}.sumtbl td.rlabel{text-align:left;font-weight:600;color:var(--ink-2)}.sumtbl tr.totrow td{background:#f1f3f5;font-weight:700}</style>',
+  // Columnas del grupo POSITIVO: una sola (P) o cuatro tonos de azul si el método gradúa los positivos
+  _posCols(){ const M=getMethod(); return posSplit(M)?M.posClasses.map(id=>{const ci=M.clsInfo(id);const sh=POS_SHADES[ci.cls];return {k:ci.cls,t:sh.code,bg:sh.bg,fg:sh.fg,title:ci.label};}):[{k:'p',t:'P',bg:'#2F86B4',fg:'#fff',title:'Positivo'}]; },
   summaryTable(headLabel, groupFn){
     const rows=this.summaryRows(groupFn); if(!rows.length)return '<p class="muted small" style="padding:12px">Sin impactos valorados para tabular.</p>';
-    const anyNeu=rows.some(r=>r.neu>0);
-    const tot={c:0,m:0,s:0,cr:0,p:0,neu:0}; rows.forEach(r=>{['c','m','s','cr','p','neu'].forEach(k=>tot[k]+=r[k]);});
+    const anyNeu=rows.some(r=>r.neu>0); const PC=this._posCols();
+    const keys=['c','m','s','cr','p','pos1','pos2','pos3','pos4','neu'];
+    const tot={}; keys.forEach(k=>tot[k]=0); rows.forEach(r=>{keys.forEach(k=>tot[k]+=r[k]||0);});
     const rs=r=>r.c+r.m+r.s+r.cr+r.p+r.neu; const grand=rs(tot);
-    const H={c:'#2E7D46',m:'#F2C010',s:'#E8842B',cr:'#C0392B',p:'#2F86B4'};
-    const body=rows.map(r=>`<tr><td class="rlabel">${esc(r.label)}</td><td>${r.c}</td><td>${r.m}</td><td>${r.s}</td><td>${r.cr}</td>${anyNeu?`<td>${r.neu}</td>`:''}<td>${r.p}</td><td class="sumc">${rs(r)}</td></tr>`).join('');
+    const H={c:'#2E7D46',m:'#F2C010',s:'#E8842B',cr:'#C0392B'};
+    const pcells=r=>PC.map(c=>`<td>${r[c.k]||0}</td>`).join('');
+    const body=rows.map(r=>`<tr><td class="rlabel">${esc(r.label)}</td><td>${r.c}</td><td>${r.m}</td><td>${r.s}</td><td>${r.cr}</td>${anyNeu?`<td>${r.neu}</td>`:''}${pcells(r)}<td class="sumc">${rs(r)}</td></tr>`).join('');
     return this._sumStyle+`<table class="tbl sumtbl"><thead>
-      <tr><th rowspan="2" class="lhead">${esc(headLabel)}</th><th colspan="4" class="ghead">NEGATIVO</th>${anyNeu?'<th rowspan="2" class="ghead">N</th>':''}<th class="ghead">POSITIVO</th><th rowspan="2" class="ghead sumh">SUMA</th></tr>
-      <tr><th style="background:${H.c};color:#fff">C</th><th style="background:${H.m};color:#1a1a1a">M</th><th style="background:${H.s};color:#fff">S</th><th style="background:${H.cr};color:#fff">CR</th><th style="background:${H.p};color:#fff">P</th></tr>
+      <tr><th rowspan="2" class="lhead">${esc(headLabel)}</th><th colspan="4" class="ghead">NEGATIVO</th>${anyNeu?'<th rowspan="2" class="ghead">N</th>':''}<th colspan="${PC.length}" class="ghead">POSITIVO</th><th rowspan="2" class="ghead sumh">SUMA</th></tr>
+      <tr><th style="background:${H.c};color:#fff">C</th><th style="background:${H.m};color:#1a1a1a">M</th><th style="background:${H.s};color:#fff">S</th><th style="background:${H.cr};color:#fff">CR</th>${PC.map(c=>`<th style="background:${c.bg};color:${c.fg}" title="${esc(c.title)}">${c.t}</th>`).join('')}</tr>
       </thead><tbody>${body}
-      <tr class="totrow"><td>SUMA</td><td>${tot.c}</td><td>${tot.m}</td><td>${tot.s}</td><td>${tot.cr}</td>${anyNeu?`<td>${tot.neu}</td>`:''}<td>${tot.p}</td><td class="sumc">${grand}</td></tr>
+      <tr class="totrow"><td>SUMA</td><td>${tot.c}</td><td>${tot.m}</td><td>${tot.s}</td><td>${tot.cr}</td>${anyNeu?`<td>${tot.neu}</td>`:''}${pcells(tot)}<td class="sumc">${grand}</td></tr>
       </tbody></table>`;
   },
   _gStage(){ return (x)=>{const a=Data.activity(x.imp.activity_id);const st=a?Data.stageOf(a):null;if(!st)return {key:'__none',label:'(sin etapa)',order:999};const order=DB.stages.findIndex(s=>s.id===st.id);return {key:st.id,label:st.name,order:order<0?999:order};}; },
@@ -3427,11 +3484,12 @@ const Results={
     const headLabel=kind==='stage'?'Etapa del proyecto':'Componente ambiental';
     const groupFn=kind==='stage'?this._gStage():this._gComp();
     const rows=this.summaryRows(groupFn); if(!rows.length){Toast.show('Sin datos para exportar','warn');return;}
-    const anyNeu=rows.some(r=>r.neu>0); const rs=r=>r.c+r.m+r.s+r.cr+r.p+r.neu;
-    const head=[headLabel,'C','M','S','CR',...(anyNeu?['N']:[]),'P','SUMA'];
-    const lines=[head.join(',')]; const tot={c:0,m:0,s:0,cr:0,p:0,neu:0};
-    rows.forEach(r=>{['c','m','s','cr','p','neu'].forEach(k=>tot[k]+=r[k]);lines.push([`"${(r.label||'').replace(/"/g,'""')}"`,r.c,r.m,r.s,r.cr,...(anyNeu?[r.neu]:[]),r.p,rs(r)].join(','));});
-    lines.push(['SUMA',tot.c,tot.m,tot.s,tot.cr,...(anyNeu?[tot.neu]:[]),tot.p,rs(tot)].join(','));
+    const anyNeu=rows.some(r=>r.neu>0); const rs=r=>r.c+r.m+r.s+r.cr+r.p+r.neu; const PC=this._posCols();
+    const head=[headLabel,'C','M','S','CR',...(anyNeu?['N']:[]),...PC.map(c=>c.k==='p'?'P':c.title),'SUMA'];
+    const keys=['c','m','s','cr','p','pos1','pos2','pos3','pos4','neu'];
+    const lines=[head.join(',')]; const tot={}; keys.forEach(k=>tot[k]=0);
+    rows.forEach(r=>{keys.forEach(k=>tot[k]+=r[k]||0);lines.push([`"${(r.label||'').replace(/"/g,'""')}"`,r.c,r.m,r.s,r.cr,...(anyNeu?[r.neu]:[]),...PC.map(c=>r[c.k]||0),rs(r)].join(','));});
+    lines.push(['SUMA',tot.c,tot.m,tot.s,tot.cr,...(anyNeu?[tot.neu]:[]),...PC.map(c=>tot[c.k]),rs(tot)].join(','));
     Export._dl(Export._base()+'_resumen_'+kind+'.csv',lines.join('\r\n'));
   },
   // Versión SVG de la tabla resumen (cuadrícula) para exportar a PNG
@@ -3440,8 +3498,8 @@ const Results={
     const anyNeu=rows.some(r=>r.neu>0);
     const cols=[{k:'c',t:'C',bg:'#2E7D46',fg:'#fff'},{k:'m',t:'M',bg:'#F2C010',fg:'#1a1a1a'},{k:'s',t:'S',bg:'#E8842B',fg:'#fff'},{k:'cr',t:'CR',bg:'#C0392B',fg:'#fff'}];
     if(anyNeu)cols.push({k:'neu',t:'N',bg:'#9AA0A6',fg:'#fff'});
-    cols.push({k:'p',t:'P',bg:'#2F86B4',fg:'#fff'});
-    const tot={c:0,m:0,s:0,cr:0,p:0,neu:0}; rows.forEach(r=>['c','m','s','cr','p','neu'].forEach(k=>tot[k]+=r[k]));
+    const PC=this._posCols(); PC.forEach(c=>cols.push(c));
+    const tot={}; ['c','m','s','cr','p','pos1','pos2','pos3','pos4','neu'].forEach(k=>tot[k]=0); rows.forEach(r=>Object.keys(tot).forEach(k=>tot[k]+=r[k]||0));
     const rs=r=>r.c+r.m+r.s+r.cr+r.p+r.neu;
     const pad=16,titleH=34,grpH=22,subH=22,rowH=24,wNum=46,wSum=58;
     const longest=Math.max(headLabel.length,4,...rows.map(r=>String(r.label).length));
@@ -3457,20 +3515,20 @@ const Results={
     s+=box(startX,titleH,negW,grpH,'#5f6b7a')+txt(startX+negW/2,titleH+grpH/2,'NEGATIVO',{fg:'#fff',fw:700});
     let gx=startX+negW;
     if(anyNeu){s+=box(gx,titleH,wNum,grpH,'#5f6b7a')+txt(gx+wNum/2,titleH+grpH/2,'NEUTRO',{fg:'#fff',fw:700,fs:9});gx+=wNum;}
-    s+=box(gx,titleH,wNum,grpH,'#5f6b7a')+txt(gx+wNum/2,titleH+grpH/2,'POSITIVO',{fg:'#fff',fw:700,fs:9});
+    s+=box(gx,titleH,wNum*PC.length,grpH,'#5f6b7a')+txt(gx+wNum*PC.length/2,titleH+grpH/2,'POSITIVO',{fg:'#fff',fw:700,fs:9});
     s+=box(sumX,titleH,wSum,grpH+subH,'#eef1f4')+txt(sumX+wSum/2,titleH+(grpH+subH)/2,'SUMA',{fw:700});
     // sub-cabecera de columnas con color
     cols.forEach((c,i)=>{const x=startX+i*wNum;s+=box(x,titleH+grpH,wNum,subH,c.bg)+txt(x+wNum/2,titleH+grpH+subH/2,c.t,{fg:c.fg,fw:700});});
     // filas
     rows.forEach((r,ri)=>{const y=bodyY+ri*rowH;
       s+=box(pad,y,wLabel,rowH,'#fff')+txt(pad,y+rowH/2,r.label,{align:'left',fw:600,fg:'#3A3F45'});
-      cols.forEach((c,i)=>{const x=startX+i*wNum;s+=box(x,y,wNum,rowH,'#fff')+txt(x+wNum/2,y+rowH/2,r[c.k]);});
+      cols.forEach((c,i)=>{const x=startX+i*wNum;s+=box(x,y,wNum,rowH,'#fff')+txt(x+wNum/2,y+rowH/2,r[c.k]||0);});
       s+=box(sumX,y,wSum,rowH,'#f7f9fb')+txt(sumX+wSum/2,y+rowH/2,rs(r),{fw:700});
     });
     // totales
     const yt=bodyY+rows.length*rowH;
     s+=box(pad,yt,wLabel,rowH,'#f1f3f5')+txt(pad,yt+rowH/2,'SUMA',{align:'left',fw:700});
-    cols.forEach((c,i)=>{const x=startX+i*wNum;s+=box(x,yt,wNum,rowH,'#f1f3f5')+txt(x+wNum/2,yt+rowH/2,tot[c.k],{fw:700});});
+    cols.forEach((c,i)=>{const x=startX+i*wNum;s+=box(x,yt,wNum,rowH,'#f1f3f5')+txt(x+wNum/2,yt+rowH/2,tot[c.k]||0,{fw:700});});
     s+=box(sumX,yt,wSum,rowH,'#e7ecf1')+txt(sumX+wSum/2,yt+rowH/2,rs(tot),{fw:700});
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#ffffff"/><text x="16" y="20" style="font-family:Georgia,serif;font-size:14px;font-weight:600;fill:#0A4744">${esc(title)}</text>${s}</svg>`;
   },
@@ -4520,9 +4578,9 @@ const Export={
    Filas: Medio › Componente ambiental › Factor · Columnas: Etapa › Componente de obra › Actividad
    Cada celda = clase del impacto más significativo (mayor |I|). Descargable en PNG / Excel / CSV.
    ============================================================ */
-const CM_BG={compat:'#2E7D46',moder:'#F2C010',sever:'#E8842B',critic:'#C0392B',pos:'#2F86B4',neu:'#9AA0A6'};
-const CM_FG={compat:'#ffffff',moder:'#1a1a1a',sever:'#ffffff',critic:'#ffffff',pos:'#ffffff',neu:'#ffffff'};
-const CM_CODE={compat:'C',moder:'M',sever:'S',critic:'CR',pos:'P',neu:'·'};
+const CM_BG={compat:'#2E7D46',moder:'#F2C010',sever:'#E8842B',critic:'#C0392B',pos:'#2F86B4',neu:'#9AA0A6',pos1:POS_SHADES.pos1.bg,pos2:POS_SHADES.pos2.bg,pos3:POS_SHADES.pos3.bg,pos4:POS_SHADES.pos4.bg};
+const CM_FG={compat:'#ffffff',moder:'#1a1a1a',sever:'#ffffff',critic:'#ffffff',pos:'#ffffff',neu:'#ffffff',pos1:POS_SHADES.pos1.fg,pos2:POS_SHADES.pos2.fg,pos3:POS_SHADES.pos3.fg,pos4:POS_SHADES.pos4.fg};
+const CM_CODE={compat:'C',moder:'M',sever:'S',critic:'CR',pos:'P',neu:'·',pos1:'+B',pos2:'+M',pos3:'+A',pos4:'+MA'};
 const ClassMatrix={
   _ord(f){let mi=99,ci=999;if(f.medium){const m=CATALOG.medios.findIndex(x=>x.c===f.medium);if(m>=0)mi=m;}if(f.component){const idx=CATALOG.componentes.findIndex(x=>x.n===f.component);if(idx>=0)ci=idx;}return {mi,ci,comp:f.component||'',fac:String(Data.factorLabel(f))};},
   data(){
@@ -4540,7 +4598,7 @@ const ClassMatrix={
     if(!imps.length)return null;
     imps.sort((x,y)=>(y.as.abs||0)-(x.as.abs||0));
     const top=imps[0]; const cls=(getMethod().clsInfo(top.as.cls)||{}).cls;
-    let bucket=(top.i.nature==='POS'||cls==='pos')?'pos':(cls||'neu'); if(!CM_CODE[bucket])bucket='neu';
+    let bucket=/^pos\d$/.test(cls||'')?cls:((top.i.nature==='POS'||cls==='pos')?'pos':(cls||'neu')); if(!CM_CODE[bucket])bucket='neu';
     return {bucket,code:CM_CODE[bucket],n:imps.length};
   },
   htmlTable(){
@@ -4590,7 +4648,7 @@ const ClassMatrix={
       g+=`<rect x="${X0+wMed+wComp}" y="${y}" width="${wFac}" height="${rowH}" fill="#ffffff" stroke="#C9CDD3"/><text x="${X0+wMed+wComp+6}" y="${y+rowH/2+3}" style="font-size:9px;fill:#1B1E22;font-family:system-ui,Arial">${esc(trunc(Data.factorLabel(f),Math.floor((wFac-10)/5.0)))}</text>`;
       acts.forEach((a,i)=>{const x=colX(i);const c=this.cell(a,f);if(c){g+=`<rect x="${x}" y="${y}" width="${colW}" height="${rowH}" fill="${CM_BG[c.bucket]}" stroke="#ffffff"/><text x="${x+colW/2}" y="${y+rowH/2+3}" text-anchor="middle" style="font-size:9.5px;font-weight:700;fill:${CM_FG[c.bucket]};font-family:system-ui,Arial">${c.code}</text>`;}else{g+=`<rect x="${x}" y="${y}" width="${colW}" height="${rowH}" fill="#ffffff" stroke="#EDEEF0"/>`;}});});
     // leyenda
-    let lx=X0, ly=bodyTop+facts.length*rowH+16; const leg=[['C','compat','Compatible'],['M','moder','Moderado'],['S','sever','Severo'],['CR','critic','Crítico'],['P','pos','Positivo']];
+    let lx=X0, ly=bodyTop+facts.length*rowH+16; const leg=[['C','compat','Compatible'],['M','moder','Moderado'],['S','sever','Severo'],['CR','critic','Crítico'],...(posSplit(getMethod())?[['+B','pos1','Pos. bajo'],['+M','pos2','Pos. medio'],['+A','pos3','Pos. alto'],['+MA','pos4','Pos. muy alto']]:[['P','pos','Positivo']])];
     leg.forEach(([code,b,lab])=>{g+=`<rect x="${lx}" y="${ly-11}" width="14" height="14" fill="${CM_BG[b]}"/><text x="${lx+18}" y="${ly}" style="font-size:10px;fill:#3A3F45;font-family:system-ui,Arial">${code} · ${lab}</text>`;lx+=Math.round((code.length+lab.length)*6.0)+40;});
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${g}</svg>`;
   },
@@ -4711,10 +4769,23 @@ const Report={
         ${M.criteria.map(c=>`<tr><td><b>${c.code}</b> · ${esc(c.name)}${c.group?` <span class="muted">(${esc(c.group)})</span>`:''}</td><td>${esc(c.help.ev)}</td><td class="rmono">${esc(scaleTxt(c))}</td></tr>`).join('')}
         ${M.family==='bojorquez'?`<tr><td><b>T</b> · Mitigación</td><td>Eficacia de las medidas (0–9). G = I·(1−T/9).</td><td class="rmono">0–9 (ordinal)</td></tr>`:''}
       </tbody></table>
-      <table class="rtbl" style="margin-top:10px"><thead><tr><th>Significancia</th><th>${esc(M.rangeLabel||M.scoreLabel||'Valor')}</th></tr></thead>
-        <tbody>${M.classes.map(c=>`<tr><td><span class="chip ${c.cls}">${esc(c.label)}</span></td><td class="rmono">${fmtR(c.min)} – ${fmtR(c.max)}</td></tr>`).join('')}</tbody></table>
+      ${posSplit(M)?(()=>{const neg=M.classes.filter(c=>!c.pos),pos=M.classes.filter(c=>c.pos);
+        return `<table class="rtbl" style="margin-top:10px"><thead><tr><th>${esc(M.rangeLabel||M.scoreLabel||'Valor')}</th><th>Impacto negativo</th><th>Impacto positivo</th></tr></thead>
+        <tbody>${neg.map((c,k)=>`<tr><td class="rmono">${fmtR(c.min)} – ${fmtR(c.max)}</td><td><span class="chip ${c.cls}">${esc(c.label)}</span></td><td>${pos[k]?`<span class="chip ${pos[k].cls}">${esc(pos[k].label)}</span>`:''}</td></tr>`).join('')}</tbody></table>`;})()
+      :`<table class="rtbl" style="margin-top:10px"><thead><tr><th>Significancia</th><th>${esc(M.rangeLabel||M.scoreLabel||'Valor')}</th></tr></thead>
+        <tbody>${M.classes.map(c=>`<tr><td><span class="chip ${c.cls}">${esc(c.label)}</span></td><td class="rmono">${fmtR(c.min)} – ${fmtR(c.max)}</td></tr>`).join('')}</tbody></table>`}
+      ${Report._posReading(M)}
       <p class="rnote">Nota metodológica: ${esc(M.name)} es un método semicuantitativo; el valor de ${esc(M.scoreLabel||'I')} resulta de juicios expertos sobre criterios ordinales debidamente justificados, no de una medición instrumental. Cada valoración conserva su justificación, fuente y versión metodológica para garantizar reproducibilidad. Fuente: ${esc(M.source)}</p>
     </section>`;
+  },
+  // Tabla de lectura de criterios para impactos positivos (solo si el método la define y hay positivos)
+  _posReading(M){
+    if(!M.criteria.some(c=>c.pos) || !DB.impacts.some(i=>i.nature==='POS')) return '';
+    const lv=(c)=>c.scale.map(sc=>{const pl=c.pos.labels&&c.pos.labels[sc.v];return `${sc.v} = ${pl||sc.l}`;}).join('; ')+(c.modifier&&c.pos.mod?`; ${c.pos.mod.replace(/\s*\(\+4\)/,'')} = +${c.modifier.v}`:'');
+    return `<p style="margin-top:14px"><b>Valoración de impactos positivos.</b> Para los impactos de naturaleza positiva se conservaron los mismos atributos, valores, ponderaciones y rangos del método; únicamente se adaptó la lectura de cada atributo para que exprese la importancia del <i>beneficio</i>: un valor mayor indica un beneficio más importante. La correspondencia aplicada es la siguiente:</p>
+      <table class="rtbl"><thead><tr><th>${M.family==='conesa'?'Atributo':'Criterio'}</th><th>Qué se evalúa en un impacto positivo</th><th>Lectura de cada nivel (valor)</th></tr></thead><tbody>
+        ${M.criteria.filter(c=>c.pos).map(c=>`<tr><td><b>${c.code}</b> · ${esc(c.name)}</td><td>${esc(c.pos.ev)}</td><td class="rsmall">${esc(lv(c))}</td></tr>`).join('')}
+      </tbody></table>`;
   },
   _actions(){
     const stages=DB.stages.slice().sort((a,b)=>(a.sequence||0)-(b.sequence||0));
@@ -4791,7 +4862,7 @@ const Report={
           return `<tr><td class="rmono">${esc(x.imp.id.slice(-6))}</td><td>${esc(x.imp.name)}</td><td>${esc(st?st.name:'—')}</td>
             <td class="rmono">${M.usesNature===false?(x.as.score>0?'+':(x.as.score<0?'−':'0')):(x.imp.nature==='POS'?'+':'−')}</td>
             ${M.criteria.map(c=>{const e=x.as.criteria[c.code]||{};return `<td class="rmono">${(e.value||0)+(e.modifier||0)}</td>`;}).join('')}
-            <td class="rmono"><b>${fmtScore(M,x.as.score)}</b></td><td>${Report.fmtCls(x.as.cls)}</td></tr>`;}).join('')}
+            <td class="rmono" style="${scoreColor(M,x.imp,x.as)}"><b>${fmtScore(M,x.as.score)}</b></td><td>${Report.fmtCls(x.as.cls)}</td></tr>`;}).join('')}
       </tbody></table>
     </section>`;
   },
@@ -4800,8 +4871,9 @@ const Report={
     if(!s.valuedN) return '';
     const figs={}; Results.figures().forEach(f=>figs[f.key]=f);
     const sl=esc(M.scoreLabel||'I');
+    const PTXT=posSplit(M)?'positivos por clase (+B bajo, +M medio, +A alto, +MA muy alto)':'positivos (P)';
     const plan=[
-      ['resumen_etapa','Resumen de impactos por etapa del proyecto','Número de impactos por etapa, separados en negativos por significancia (C compatible, M moderado, S severo, CR crítico) y positivos (P).'],
+      ['resumen_etapa','Resumen de impactos por etapa del proyecto','Número de impactos por etapa, separados en negativos por significancia (C compatible, M moderado, S severo, CR crítico) y '+PTXT+'.'],
       ['resumen_componente','Resumen de impactos por componente ambiental','Número de impactos que recibe cada componente ambiental, separados por significancia y naturaleza.'],
       ['pie_significancia','Distribución de impactos por significancia (%)','Proporción del total de impactos valorados en cada clase de significancia.'],
       ['histograma_bandas','Histograma de impactos por banda RIAM','Número de impactos en cada una de las once bandas del método RIAM, de −E a +E.'],
@@ -4816,7 +4888,7 @@ const Report={
     let html=plan.filter(([k])=>figs[k]).map(([k,t,d])=>fig(figs[k].svg,t,d)).join('');
     if(DB.activities.length&&DB.factors.length){
       html+=fig(ClassMatrix.svg(),'Matriz de significancia (indicador de clase por actividad × factor)',
-        `Cada celda muestra la clase del impacto más significativo (mayor |${M.scoreLabel||'I'}|) de esa interacción: C compatible, M moderado, S severo, CR crítico, P positivo.`,'rfig-land');
+        `Cada celda muestra la clase del impacto más significativo (mayor |${M.scoreLabel||'I'}|) de esa interacción: C compatible, M moderado, S severo, CR crítico; ${posSplit(M)?'+B positivo bajo, +M positivo medio, +A positivo alto, +MA positivo muy alto':'P positivo'}.`,'rfig-land');
     }
     return `<section class="rblock">${Report._h('','Gráficas de resultados')}
       <p>Las siguientes figuras resumen la evaluación con el método ${esc(M.name)}: la distribución de los impactos por etapa del proyecto, por componente y medio ambiental, por clase de significancia y por actividad, así como la matriz de significancia que localiza cada impacto en el cruce actividad–factor.</p>
@@ -4830,7 +4902,7 @@ const Report={
         const r=M.calculate(as.criteria,i.nature);const ci=M.clsInfo(r.cls);
         return `<div class="rsheet">
           <div class="rsheet-hd"><div><span class="rmono rsmall">${esc(i.id.slice(-8))}</span><h3>${esc(i.name)}</h3></div>
-            <div class="rsheet-score"><span class="rmono">${fmtScore(M,r.score)}</span>${Report.fmtCls(r.cls)}</div></div>
+            <div class="rsheet-score"><span class="rmono" style="${scoreColor(M,i,as)}">${fmtScore(M,r.score)}</span>${Report.fmtCls(r.cls)}</div></div>
           <table class="rkv"><tbody>
             <tr><th>Etapa</th><td>${esc(st?st.name:'—')}</td><th>Actividad</th><td>${esc(a?a.name:'—')}</td></tr>
             <tr><th>Factor</th><td>${esc(f?f.name:'—')}</td>${M.usesNature!==false?`<th>Naturaleza</th><td>${i.nature==='POS'?'Positivo (+1)':'Negativo (−1)'}</td>`:(M.categories?`<th>Categoría</th><td>${esc(as.category||'—')}${as.category?' · '+esc((M.categories.find(c=>c.c===as.category)||{}).n||''):''}</td>`:`<th>Naturaleza</th><td>${(as.score!=null&&as.score<0)?'Adverso (M negativa)':((as.score!=null&&as.score>0)?'Benéfico (M positiva)':'—')}</td>`)}</tr>
@@ -4847,7 +4919,7 @@ const Report={
             <div class="rmono"><b>${esc(r.memory.result)}</b> → ${ci.label.toUpperCase()}</div>
           </div>
           <table class="rtbl rsmall" style="margin-top:8px"><thead><tr><th>Atr.</th><th>Cat.</th><th>Val.</th><th>Justificación</th><th>Fuente</th></tr></thead><tbody>
-            ${M.criteria.map(c=>{const e=as.criteria[c.code]||{};return `<tr><td><b>${c.code}</b></td><td>${esc(e.category||'—')}</td><td class="rmono">${(e.value||0)+(e.modifier||0)}</td><td>${esc(e.justification||'—')}</td><td>${esc(e.source||'—')}</td></tr>`;}).join('')}
+            ${M.criteria.map(c=>{const e=as.criteria[c.code]||{};return `<tr><td><b>${c.code}</b></td><td>${esc(e.value!=null?(critLabel(c,e.value,i.nature)||e.category||'—'):'—')}</td><td class="rmono">${(e.value||0)+(e.modifier||0)}</td><td>${esc(e.justification||'—')}</td><td>${esc(e.source||'—')}</td></tr>`;}).join('')}
           </tbody></table>
         </div>`;}).join('')}
     </section>`;
