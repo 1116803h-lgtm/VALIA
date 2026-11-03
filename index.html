@@ -4609,6 +4609,7 @@ const Report={
       ${Report._interactionMatrix()}
       ${Report._impactMatrix(M,s)}
       ${Report._causal(M)}
+      ${Report._figures(M,s)}
       ${Report._sheets(M)}
       ${Report._results(M,s)}
       ${Report._priority(M)}
@@ -4731,6 +4732,33 @@ const Report={
             <td class="rmono"><b>${fmtScore(M,x.as.score)}</b></td><td>${Report.fmtCls(x.as.cls)}</td></tr>`;}).join('')}
       </tbody></table>
     </section>`;
+  },
+  // Gráficas y tablas de la pantalla Resultados, insertadas como figuras numeradas del reporte
+  _figures(M,s){
+    if(!s.valuedN) return '';
+    const figs={}; Results.figures().forEach(f=>figs[f.key]=f);
+    const sl=esc(M.scoreLabel||'I');
+    const plan=[
+      ['resumen_etapa','Resumen de impactos por etapa del proyecto','Número de impactos por etapa, separados en negativos por significancia (C compatible, M moderado, S severo, CR crítico) y positivos (P).'],
+      ['resumen_componente','Resumen de impactos por componente ambiental','Número de impactos que recibe cada componente ambiental, separados por significancia y naturaleza.'],
+      ['pie_significancia','Distribución de impactos por significancia (%)','Proporción del total de impactos valorados en cada clase de significancia.'],
+      ['histograma_bandas','Histograma de impactos por banda RIAM','Número de impactos en cada una de las once bandas del método RIAM, de −E a +E.'],
+      ['dispersion_mi','Dispersión Magnitud–Importancia','Cada punto es una interacción (M, I); a la izquierda los efectos adversos y a la derecha los benéficos.'],
+      ['por_etapa','Impactos por etapa y significancia','Composición de los impactos de cada etapa según su significancia.'],
+      ['por_medio','Impactos por medio ambiental y significancia','Composición de los impactos de cada medio ambiental según su significancia.'],
+      ['pie_componente','Distribución de impactos por componente ambiental (%)','Proporción del total de impactos que corresponde a cada componente ambiental.'],
+      ['por_actividad','Actividades con mayor número de impactos','Actividades del proyecto ordenadas por la cantidad de impactos que generan.']
+    ];
+    let n=0;
+    const fig=(svg,title,desc,cls)=>`<figure class="rfig ${cls||''}"><div class="rfig-img">${svg}</div><figcaption><b>Figura ${++n}.</b> ${esc(title)}. <span class="muted">${esc(desc)}</span></figcaption></figure>`;
+    let html=plan.filter(([k])=>figs[k]).map(([k,t,d])=>fig(figs[k].svg,t,d)).join('');
+    if(DB.activities.length&&DB.factors.length){
+      html+=fig(ClassMatrix.svg(),'Matriz de significancia (indicador de clase por actividad × factor)',
+        `Cada celda muestra la clase del impacto más significativo (mayor |${M.scoreLabel||'I'}|) de esa interacción: C compatible, M moderado, S severo, CR crítico, P positivo.`,'rfig-land');
+    }
+    return `<section class="rblock">${Report._h('','Gráficas de resultados')}
+      <p>Las siguientes figuras resumen la evaluación con el método ${esc(M.name)}: la distribución de los impactos por etapa del proyecto, por componente y medio ambiental, por clase de significancia y por actividad, así como la matriz de significancia que localiza cada impacto en el cruce actividad–factor.</p>
+      ${html}</section>`;
   },
   _sheets(M){
     const valued=DB.impacts.map(i=>({imp:i,as:Data.initialAssess(i.id)})).filter(x=>x.as&&x.as.complete).sort((a,b)=>b.as.abs-a.as.abs);
@@ -4885,6 +4913,12 @@ document.addEventListener('DOMContentLoaded',boot);
 .rmatrix tr.rsumrow th{background:var(--surface-2);color:var(--ink-3)}
 .rmatrix tr.rsumrow td{background:var(--surface-2);font-family:var(--mono);color:var(--ink-2);font-weight:600}
 .rmatrix tr.rsumrow td.rgrand{background:var(--brand-l);color:var(--brand-d);font-weight:700}
+.rfig{margin:14px 0 22px;break-inside:avoid;page-break-inside:avoid;text-align:center}
+.rfig-img svg{max-width:100%;height:auto;display:block;margin:0 auto}
+.rfig-land .rfig-img svg{width:100%;max-height:170mm}
+@page rland{size:letter landscape;margin:12mm}
+@media print{.rfig-land{page:rland;break-before:page;break-after:page}}
+.rfig figcaption{font-family:var(--sans);font-size:11px;color:#15181B;text-align:left;margin-top:6px;line-height:1.45}
 .rsheet{border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}
 .rsheet-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:8px}
 .rsheet-hd h3{font-size:15px;margin-top:2px;color:#15181B}
