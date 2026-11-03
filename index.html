@@ -1410,7 +1410,7 @@ const Persist={
         if(!d.schema||!d.project){throw new Error('formato');}
         DB=migrate(d); ACTIVE_METHOD=DB.method||'CONESA-STD-01';
         Persist._fileHandle=handle||null;   // recuerda el archivo abierto (si lo hay) para "Guardar"
-        currentImpactId=null; Persist._dirty=false; Persist._lastFileSave=null;
+        currentImpactId=null; Persist._dirty=false; Persist._lastFileSave=null; Router._scroll={};
         recalcAll(); Nav.render(); Router.go('project'); Persist.autosave();
         Toast.show('Proyecto cargado: '+(DB.project.name||DB.project.code||'sin nombre'));
       }catch(e){ Toast.show('Archivo no válido','err'); }
@@ -1418,7 +1418,7 @@ const Persist={
     r.readAsText(file);
   },
   newProject(){
-    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD; Persist._fileHandle=null; Persist._dirty=false; Persist._lastFileSave=null; currentImpactId=null;
+    const go=()=>{ DB=blankProject(); ACTIVE_METHOD='CONESA-STD-01'; DB.method=ACTIVE_METHOD; Persist._fileHandle=null; Persist._dirty=false; Persist._lastFileSave=null; currentImpactId=null; Router._scroll={};
       Nav.render(); Router.go('project'); Persist.autosave(); Toast.show('Nuevo proyecto creado'); };
     if(DB && (DB.impacts.length||DB.project.name)) confirmBox('¿Crear un proyecto nuevo? Se perderán los cambios no guardados en archivo.',go,'Crear nuevo');
     else go();
@@ -1535,14 +1535,21 @@ const Nav={
 };
 const Router={
   current:'project',
-  go(id){ if(!DB){DB=blankProject();} if(this.current==='assess'&&id!=='assess'&&typeof Assess!=='undefined')Assess._prune(); this.current=id; this.refresh();
+  _scroll:{},   // posición del scroll de cada sección (cada una conserva la suya)
+  go(id){ if(!DB){DB=blankProject();} if(this.current==='assess'&&id!=='assess'&&typeof Assess!=='undefined')Assess._prune();
+    const prev=this.current, m=$('#main');
+    if(m && prev!==id) this._scroll[prev]=m.scrollTop;
+    this.current=id; this.refresh();
+    if(m && prev!==id) m.scrollTop=this._scroll[id]||0;
     $$('.nav a').forEach(a=>a.classList.remove('active'));
     const a=$('#nav-'+id); if(a)a.classList.add('active');
   },
   refresh(){ Nav.render(); $$('.nav a').forEach(a=>a.classList.remove('active')); const a=$('#nav-'+this.current);if(a)a.classList.add('active');
+    const keep=$('#main').scrollTop;   // al redibujar la misma sección no se pierde la posición
     const fn=Screens[this.current]; $('#main').innerHTML=''; const scr=el('div',{class:'screen active'}); scr.innerHTML=fn?fn():'—'; $('#main').appendChild(scr);
     if(Screens['_after_'+this.current])Screens['_after_'+this.current]();
     Method.populateSelector();
+    $('#main').scrollTop=keep;
   }
 };
 /* ============================================================
