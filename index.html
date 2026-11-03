@@ -96,6 +96,11 @@ a{color:var(--brand)}
 .card>.bd{padding:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.team-row{display:grid;grid-template-columns:26px 1.5fr 1fr 1fr;gap:10px;align-items:end;margin-bottom:4px}
+.team-row .field{margin-bottom:8px}
+.team-n{width:24px;height:24px;border-radius:50%;background:var(--brand-l);color:var(--brand-d);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.team-n.lead{background:var(--brand);color:#fff}
+@media (max-width:900px){.team-row{grid-template-columns:26px 1fr}.team-row .field:not(:first-of-type){grid-column:2}}
 @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
 
 /* ---------- Forms ---------- */
@@ -372,7 +377,7 @@ function blankProject(){
     schema:'valia.v1',
     project:{
       id:UID('PRJ'), code:'', name:'', type:'', sector:'', subsector:'',
-      promoter:'', responsible:'', cedula:'', modality:'', state:'', municipality:'', locality:'',
+      promoter:'', responsible:'', cedula:'', team:Team.blank(), modality:'', state:'', municipality:'', locality:'',
       latitude:'', longitude:'', crs:'EPSG:4326',
       project_area:'', influence_area:'', region_area:'', environmental_system:'',
       description:'', useful_life:'', status:'DRAFT',
@@ -1419,6 +1424,21 @@ const Persist={
     else go();
   }
 };
+/* Equipo evaluador: hasta 4 integrantes. El integrante 1 es el responsable de la evaluación
+   (se mantiene sincronizado con project.responsible / project.cedula, que usan portada y firma). */
+const Team={
+  MAX:4,
+  blank(){ return Array.from({length:4},()=>({name:'',role:'',cedula:''})); },
+  members(){ return ((DB&&DB.project.team)||[]).filter(m=>m&&m.name&&m.name.trim()); },
+  label(m){ return m.name+(m.role?' · '+m.role:''); },
+  normalize(p){
+    let t=Array.isArray(p.team)?p.team.slice(0,4):[];
+    while(t.length<4) t.push({name:'',role:'',cedula:''});
+    t=t.map(m=>({name:(m&&m.name)||'',role:(m&&m.role)||'',cedula:(m&&m.cedula)||''}));
+    if(!t[0].name && !t[0].cedula && (p.responsible||p.cedula)){ t[0].name=p.responsible||''; t[0].cedula=p.cedula||''; }
+    p.team=t; p.responsible=t[0].name; p.cedula=t[0].cedula;
+  }
+};
 function migrate(d){ // asegura arrays presentes + compatibilidad con esquema de 2 niveles
   ['stages','components','activities','factors','interactions','impacts','assessments','measures','pma_programs','monitoring','corrective','causalNodes','causalEdges','audit'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
   { let seq=d.measures.reduce((m,x)=>Math.max(m,x.seq||0),0);
@@ -1431,6 +1451,7 @@ function migrate(d){ // asegura arrays presentes + compatibilidad con esquema de
       if(!m.status) m.status='ACTIVE';
     }); }
   d.assessments=d.assessments.filter(a=>!a._new);
+  if(d.project) Team.normalize(d.project);
   if(d.med_base_version===undefined) d.med_base_version=(typeof CATALOG_MED!=='undefined'?CATALOG_MED.ver:'');
   // Compatibilidad: actividades del esquema antiguo tenían stage_id directo. Se les crea un componente "General".
   d.activities.forEach(a=>{
@@ -2060,10 +2081,14 @@ Screens.project=function(){
       <div class="grid2">${F('code','Clave / expediente','MIA-2026-…')}${F('sector','Sector','Vías / Logística / Urbano')}</div>
       <div class="grid2">${F('type','Tipo de obra','Infraestructura portuaria')}${F('subsector','Subsector','Terminal intermodal')}</div>
       ${F('promoter','Promovente','Razón social')}
-      <div class="grid2">${F('responsible','Responsable de la evaluación','Nombre')}${F('cedula','Cédula profesional','Número de cédula profesional')}</div>
       <div class="field"><label>Modalidad</label><select id="p_modality" onchange="Screens._pset('modality',this.value)">
         ${['','Particular','Regional','Informe preventivo'].map(o=>`<option ${p.modality===o?'selected':''}>${o}</option>`).join('')}
       </select></div>
+    </div></div>
+
+    <div class="card"><div class="hd"><h3>Equipo evaluador</h3><span class="muted small">hasta 4 integrantes</span></div><div class="bd">
+      <div class="small muted" style="margin-bottom:10px">Técnicos, ingenieros o biólogos que participan en la evaluación. El integrante 1 es el <b>responsable</b> que firma el reporte. Los nombres registrados aparecen como lista en el campo <i>Evaluador</i> de cada valoración.</div>
+      ${Screens._teamRows()}
     </div></div>
 
     <div class="card"><div class="hd"><h3>Localización y espacial</h3></div><div class="bd">
@@ -2094,6 +2119,25 @@ Screens.project=function(){
     ${Screens._methodInfo()}
   </div></div>`;
 };
+Screens._teamRows=function(){
+  Team.normalize(DB.project);
+  return DB.project.team.map((m,i)=>`<div class="team-row">
+    <div class="team-n ${i?'':'lead'}" title="${i?'Integrante '+(i+1):'Responsable de la evaluación'}">${i+1}</div>
+    <div class="field"><label>${i?'Nombre':'Responsable de la evaluación'}${i?'':' <span class="req">*</span>'}</label>
+      <input type="text" id="p_team_${i}_name" value="${esc(m.name)}" placeholder="Nombre completo" onfocus="this.dataset.old=this.value" oninput="Screens._tset(${i},'name',this.value)" onchange="Screens._trename(this.dataset.old,this.value);this.dataset.old=this.value"></div>
+    <div class="field"><label>Especialidad</label>
+      <input type="text" id="p_team_${i}_role" value="${esc(m.role)}" placeholder="${['Ing. ambiental','Biólogo(a)','Ing. civil','Técnico de campo'][i]}" oninput="Screens._tset(${i},'role',this.value)"></div>
+    <div class="field"><label>Cédula prof.</label>
+      <input type="text" id="p_team_${i}_cedula" value="${esc(m.cedula)}" placeholder="Número de cédula" oninput="Screens._tset(${i},'cedula',this.value)"></div>
+  </div>`).join('');
+};
+Screens._tset=function(i,k,v){ Team.normalize(DB.project); DB.project.team[i][k]=v;
+  if(i===0){ if(k==='name')DB.project.responsible=v; if(k==='cedula')DB.project.cedula=v; } touch(); };
+// Si se corrige el nombre de un integrante, se actualiza en las valoraciones que ya lo tenían
+Screens._trename=function(oldN,newN){ oldN=(oldN||'').trim(); newN=(newN||'').trim();
+  if(!oldN||!newN||oldN===newN) return; let n=0;
+  DB.assessments.forEach(a=>{ if((a.evaluator||'').trim()===oldN){ a.evaluator=newN; n++; } });
+  if(n){ touch(); Toast.show(`Evaluador actualizado en ${n} valoración(es)`,'ok'); } };
 Screens._pset=function(k,v){ DB.project[k]=v; if(k==='name')$('#topProjName').textContent=v||'Proyecto sin nombre'; touch(); };
 Screens._methodInfo=function(){
   const M=getMethod();
@@ -2780,7 +2824,7 @@ Assess._calcPanel=function(as){
         ${cons.map(x=>`<div class="alert ${x.lvl}"><span class="ai">${x.lvl==='err'?'✕':x.lvl==='warn'?'⚠':'ℹ'}</span><span>${esc(x.t)}</span></div>`).join('')}`:''}
       <div class="divider"></div>
       <div class="grid2" style="gap:10px">
-        <div class="field" style="margin:0"><label>Evaluador</label><input type="text" value="${esc(as.evaluator||'')}" oninput="Assess._meta('evaluator',this.value)"></div>
+        <div class="field" style="margin:0"><label>Evaluador</label>${Assess._evalSelect(as)}</div>
         <div class="field" style="margin:0"><label>Fecha</label><input type="date" value="${esc(as.date||todayStr())}" oninput="Assess._meta('date',this.value)"></div>
       </div>
       <div style="margin-top:10px" class="rowbtns">
@@ -2824,6 +2868,17 @@ Assess._refreshCalc=function(){
   Nav.render();$$('.nav a').forEach(a=>a.classList.remove('active'));const na=$('#nav-assess');if(na)na.classList.add('active');
 };
 Assess._done=function(){recalcAll();touch();Router.go('impacts');Toast.show('Valoración guardada');};
+Assess._evalSelect=function(as){
+  const mem=Team.members(), cur=(as.evaluator||'').trim();
+  if(!mem.length) return `<input type="text" value="${esc(cur)}" placeholder="Nombre" oninput="Assess._meta('evaluator',this.value)">
+    <div class="small muted" style="margin-top:4px">Registra al equipo en <a href="#" onclick="Router.go('project');return false">01 Proyecto</a> para elegirlo de una lista.</div>`;
+  const known=mem.some(m=>m.name.trim()===cur);
+  return `<select onchange="Assess._meta('evaluator',this.value)">
+    <option value="" ${cur?'':'selected'}>— Selecciona —</option>
+    ${mem.map(m=>`<option value="${esc(m.name.trim())}" ${m.name.trim()===cur?'selected':''}>${esc(Team.label(m))}</option>`).join('')}
+    ${cur&&!known?`<option value="${esc(cur)}" selected>${esc(cur)} (no registrado en el equipo)</option>`:''}
+  </select>`;
+};
 Assess._changeImpact=function(){ Assess._prune(); currentImpactId=null; Router.refresh(); };
 // Quita valoraciones que se abrieron pero nunca se capturaron (y residuales copiadas sin modificar)
 Assess._prune=function(){ if(!DB)return; const n=DB.assessments.length; DB.assessments=DB.assessments.filter(a=>!a._new); if(DB.assessments.length!==n) Persist.autosave(); };
@@ -4632,7 +4687,7 @@ const Report={
            ['Tipo de obra',p.type],['Modalidad',p.modality],['Ubicación',[p.locality,p.municipality,p.state].filter(Boolean).join(', ')],
            ['Coordenadas',(p.latitude&&p.longitude)?`${p.latitude}, ${p.longitude} (${p.crs})`:''],['Sistema ambiental',p.environmental_system],
            ['Área del proyecto',p.project_area?p.project_area+' ha':''],['Área de influencia',p.influence_area?p.influence_area+' ha':''],
-           ['Responsable de la evaluación',p.responsible],['Cédula profesional',p.cedula],['Método de evaluación',`${M.name} · ${M.id} v${M.version}`],['Fecha de emisión',dt]]
+           ['Responsable de la evaluación',p.responsible],['Cédula profesional',p.cedula],...(Team.members().length>1?[['Equipo evaluador',Team.members().slice(1).map(m=>m.name+(m.role?' ('+m.role+')':'')+(m.cedula?' · Céd. '+m.cedula:'')).join('; ')]]:[]),['Método de evaluación',`${M.name} · ${M.id} v${M.version}`],['Fecha de emisión',dt]]
           .filter(r=>r[1]).map(r=>`<tr><th>${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}
       </tbody></table>
     </div>`;
@@ -4774,6 +4829,7 @@ const Report={
             <tr><th>Factor</th><td>${esc(f?f.name:'—')}</td>${M.usesNature!==false?`<th>Naturaleza</th><td>${i.nature==='POS'?'Positivo (+1)':'Negativo (−1)'}</td>`:(M.categories?`<th>Categoría</th><td>${esc(as.category||'—')}${as.category?' · '+esc((M.categories.find(c=>c.c===as.category)||{}).n||''):''}</td>`:`<th>Naturaleza</th><td>${(as.score!=null&&as.score<0)?'Adverso (M negativa)':((as.score!=null&&as.score>0)?'Benéfico (M positiva)':'—')}</td>`)}</tr>
             ${i.aspect_name?`<tr><th>Aspecto ambiental</th><td colspan="3">${esc(i.aspect_name)}${i.aspect_family?` <span class="muted">· ${esc(i.aspect_family)}</span>`:''}</td></tr>`:''}
             ${i.receptor?`<tr><th>Receptor</th><td colspan="3">${esc(i.receptor)}</td></tr>`:''}
+            ${as.evaluator?`<tr><th>Evaluador</th><td>${esc(as.evaluator)}</td><th>Fecha</th><td>${esc(as.date||'—')}</td></tr>`:''}
             ${i.description?`<tr><th>Descripción</th><td colspan="3">${esc(i.description)}</td></tr>`:''}
             ${i.causal_mechanism?`<tr><th>Mecanismo causal</th><td colspan="3">${esc(i.causal_mechanism)}</td></tr>`:''}
           </tbody></table>
@@ -4839,7 +4895,8 @@ const Report={
     return `<section class="rblock">${Report._h('11','Conclusiones')}
       <p>La evaluación mediante ${esc(M.name)} identificó ${s.total} impacto(s), de los cuales ${s.valuedN} fueron valorados: ${s.neg} negativo(s), ${s.pos} positivo(s)${s.neu?' y '+s.neu+' neutro(s)':''}. La distribución por significancia es: ${distr}. La clase predominante es ${dom.toLowerCase()}.</p>
       <p>${pri?`Se identificaron ${pri} impacto(s) negativo(s) de significancia severa o crítica que concentran las medidas ambientales propuestas.`:'No se identificaron impactos negativos severos o críticos.'} ${DB.measures.length?`Se proponen ${DB.measures.length} medida(s) ambiental(es) para el manejo de los impactos.`:''} El presente análisis conserva la trazabilidad completa de cada valoración —dato, criterio, justificación, evidencia y versión metodológica— conforme a los requisitos de un estudio de impacto ambiental reproducible.</p>
-      <div class="rsign"><div class="rsign-line">${esc(DB.project.responsible||'')}</div><div class="rsign-lbl">Responsable de la evaluación ambiental${DB.project.cedula?`<br>Cédula profesional: ${esc(DB.project.cedula)}`:''}</div></div>
+      <div class="rsigns">${(()=>{ const t=(DB.project.team||[]).map((m,i)=>({...m,i})).filter(m=>m.i===0||(m.name&&m.name.trim()));
+        return t.map(m=>`<div class="rsign"><div class="rsign-line">${esc(m.name||'')}</div><div class="rsign-lbl">${m.i===0?'Responsable de la evaluación ambiental':esc(m.role||'Integrante del equipo evaluador')}${m.cedula?`<br>Cédula profesional: ${esc(m.cedula)}`:''}</div></div>`).join(''); })()}</div>
     </section>`;
   }
 };
@@ -4932,7 +4989,8 @@ document.addEventListener('DOMContentLoaded',boot);
 .rmemory b{color:#8FCf9F}
 .rmeasure{margin-bottom:12px;break-inside:avoid}
 .rtag{font-family:var(--sans);font-size:9.5px;background:var(--brand-l);color:var(--brand-d);padding:1px 8px;border-radius:10px;vertical-align:middle;font-weight:600}
-.rsign{margin-top:40px;text-align:center;width:280px}
+.rsigns{display:flex;flex-wrap:wrap;gap:28px 48px;margin-top:40px;break-inside:avoid;page-break-inside:avoid}
+.rsign{margin-top:30px;text-align:center;width:260px}
 .rsign-line{border-top:1px solid #15181B;padding-top:6px;font-size:13px;min-height:20px}
 .rsign-lbl{font-family:var(--sans);font-size:10.5px;color:var(--ink-2)}
 .rdoc .chip{font-family:var(--sans)}
