@@ -105,6 +105,38 @@ a{color:var(--brand)}
 .ol-orig{display:block;font-size:10px;color:var(--ink-3);font-weight:400;margin-top:1px}
 .pos-tag{display:inline-block;background:#DCEBF7;color:#1F5E93;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;margin-right:4px}
 .alert.pos-note{background:#EEF5FB;border-color:#BFD8EE;margin-bottom:14px}.alert.pos-note .ai{color:#2A72B5}
+.rv-toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:4px 0 14px}
+.rv-fs{display:flex;gap:6px;flex-wrap:wrap}
+.rv-f{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.rv-f b{margin-left:3px}.rv-f.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.rv-f.a:not(.on) b{color:var(--critic)}.rv-f.m:not(.on) b{color:var(--sever)}.rv-f.b:not(.on) b{color:#9A7400}
+.rv-group .hd{align-items:flex-start}.rv-group .hd h3{margin:0}.rv-n{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--line);font-size:11px;text-align:center;margin-left:4px;font-family:var(--sans);color:var(--ink-2)}
+.rv-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start;padding:12px 16px;border-top:1px solid var(--line);border-left:4px solid transparent}
+.rv-item:first-child{border-top:0}
+.rv-item.sev-alta{border-left-color:var(--critic)}.rv-item.sev-media{border-left-color:var(--sever)}.rv-item.sev-baja{border-left-color:var(--moder)}
+.rv-item.done{opacity:.75}
+.rv-sev{justify-self:start;margin-top:1px}
+.rv-msg{font-weight:600;font-size:13px;color:var(--ink)}
+.rv-cat{font-weight:500;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.rv-where{font-size:12.5px;margin-top:3px;color:var(--ink-2)}.rv-where span{color:var(--ink-3)}
+.rv-crit{display:inline-flex;gap:4px;margin-top:5px;flex-wrap:wrap}.rv-crit span{font-family:var(--mono);font-size:11px;background:var(--brand-l);color:var(--brand-d);border-radius:4px;padding:1px 6px}
+.rv-fix{font-size:12px;color:var(--ink-3);margin-top:5px}
+.rv-act{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.rv-ok{background:none;border:0;color:var(--ink-3);font-size:11.5px;cursor:pointer;padding:2px 0}.rv-ok:hover{color:var(--brand-d);text-decoration:underline}
+details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webkit-details-marker{display:none}
+details.card>summary h3::before{content:'▸ ';color:var(--ink-3)}details.card[open]>summary h3::before{content:'▾ '}
+#revbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;max-width:min(980px,calc(100vw - 32px));
+  background:#0F2E2C;color:#E9F2F1;border-radius:12px;padding:9px 10px 9px 14px;box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:12.5px;animation:pop .2s ease}
+#revbar .rb-tag{background:#2A6F6A;border-radius:6px;padding:2px 8px;font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+#revbar .rb-msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#revbar .rb-ok{color:#9FE0B0}
+#revbar .btn.ghost{background:transparent;color:#E9F2F1;border-color:#3F6663}
+#revbar .rb-x{background:none;border:0;color:#9FB7B5;cursor:pointer;font-size:14px;padding:4px}
+.rv-target{box-shadow:0 0 0 2px var(--sever)}
+@keyframes rvflash{0%{box-shadow:0 0 0 0 rgba(232,132,43,.0)}30%{box-shadow:0 0 0 6px rgba(232,132,43,.45)}100%{box-shadow:0 0 0 2px rgba(232,132,43,.6)}}
+.rv-flash{animation:rvflash 1.2s ease}
+tr.rv-flash td{background:#FFF4E5}
+@media (max-width:760px){.rv-item{grid-template-columns:1fr}.rv-act{align-items:flex-start;flex-direction:row}#revbar .rb-msg{display:none}}
 .team-row{display:grid;grid-template-columns:26px 1.5fr 1fr 1fr;gap:10px;align-items:end;margin-bottom:4px}
 .team-row .field{margin-bottom:8px}
 .team-n{width:24px;height:24px;border-radius:50%;background:var(--brand-l);color:var(--brand-d);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
@@ -264,7 +296,13 @@ textarea{resize:vertical;min-height:64px;line-height:1.45}
 .help .no{color:var(--sever);font-weight:600}
 
 /* ---------- Live calc panel ---------- */
-.calc-panel{position:sticky;top:0;align-self:start}
+.calc-panel{position:sticky;top:var(--ahh,0px);align-self:start}
+/* Valoración: encabezado del impacto fijo al desplazarse (solo en esta pantalla) */
+.page-head.assess-head{position:sticky;top:-26px;z-index:30;background:var(--paper);margin:-26px -34px 20px;padding:26px 34px 12px;transition:padding .15s ease,box-shadow .15s ease}
+.page-head.assess-head.stuck{padding-top:30px;padding-bottom:10px;box-shadow:0 6px 14px -10px rgba(0,0,0,.35)}
+.page-head.assess-head.stuck .titles h2{font-size:20px}
+.page-head.assess-head.stuck .step-tag{display:none}
+@media (max-width:760px){.page-head.assess-head{margin:-26px -16px 16px;padding-left:16px;padding-right:16px}}
 .calc-result{text-align:center;padding:20px}
 .calc-result .imp-val{font-family:var(--mono);font-size:52px;font-weight:600;line-height:1}
 .calc-result .imp-cls{margin-top:8px}
@@ -275,7 +313,7 @@ textarea{resize:vertical;min-height:64px;line-height:1.45}
 .contrib-bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px}
 .contrib-bar .cl{font-family:var(--mono);width:26px;color:var(--ink-2)}
 .contrib-bar .ct{flex:1;height:16px;background:var(--line-2);border-radius:4px;overflow:hidden}
-.contrib-bar .cf{height:100%;background:var(--brand);border-radius:4px}
+.contrib-bar .cf{display:block;height:100%;background:var(--brand);border-radius:4px}
 .contrib-bar .cv{font-family:var(--mono);width:34px;text-align:right;color:var(--ink-2)}
 .progress{height:6px;background:var(--line-2);border-radius:4px;overflow:hidden;margin-top:6px}
 .progress .pf{height:100%;background:var(--brand);transition:width .3s}
@@ -569,22 +607,22 @@ registerMethod({
   consistency(cr,impact){
     const out=[]; const val=(c)=>cr[c]?cr[c].value:null; const mod=(c)=>cr[c]?cr[c].modifier:0;
     if(impact&&impact.nature==='POS'){
-      if(val('PE')===4 && val('RV')===1) out.push({lvl:'warn',t:'Beneficio permanente que, sin embargo, se pierde naturalmente en menos de un año. Combinación contradictoria — revise PE o RV.'});
-      if(val('RV')===4 && val('MC')===1) out.push({lvl:'warn',t:'El beneficio se consolida naturalmente, pero se pierde en cuanto cesa la intervención humana. Revise: probablemente MC debe ser mayor.'});
-      if(val('EF')===1 && !impact.causal_mechanism) out.push({lvl:'warn',t:'Beneficio indirecto sin mecanismo causal descrito. Registre el efecto intermedio (Acción → intermedio → beneficio).'});
-      if(val('SI')>=2) out.push({lvl:'info',t:'Sinergia ≥ 2: indique con qué otros beneficios se potencia.'});
-      if(val('AC')===4) out.push({lvl:'info',t:'Acumulativo: describa cómo crece el beneficio con el tiempo en la justificación de AC.'});
-      if(mod('EX')===4) out.push({lvl:'info',t:'Ubicación prioritaria (+4): explique por qué el sitio hace más valioso el beneficio (carencia del servicio, ANP, área degradada…).'});
-      if(mod('MO')===4) out.push({lvl:'info',t:'Momento oportuno (+4): indique por qué el beneficio llega cuando más se necesita.'});
+      if(val('PE')===4 && val('RV')===1) out.push({c:['PE','RV'],lvl:'warn',t:'Beneficio permanente que, sin embargo, se pierde naturalmente en menos de un año. Combinación contradictoria — revise PE o RV.'});
+      if(val('RV')===4 && val('MC')===1) out.push({c:['RV','MC'],lvl:'warn',t:'El beneficio se consolida naturalmente, pero se pierde en cuanto cesa la intervención humana. Revise: probablemente MC debe ser mayor.'});
+      if(val('EF')===1 && !impact.causal_mechanism) out.push({c:['EF'],lvl:'warn',t:'Beneficio indirecto sin mecanismo causal descrito. Registre el efecto intermedio (Acción → intermedio → beneficio).'});
+      if(val('SI')>=2) out.push({c:['SI'],lvl:'info',t:'Sinergia ≥ 2: indique con qué otros beneficios se potencia.'});
+      if(val('AC')===4) out.push({c:['AC'],lvl:'info',t:'Acumulativo: describa cómo crece el beneficio con el tiempo en la justificación de AC.'});
+      if(mod('EX')===4) out.push({c:['EX'],lvl:'info',t:'Ubicación prioritaria (+4): explique por qué el sitio hace más valioso el beneficio (carencia del servicio, ANP, área degradada…).'});
+      if(mod('MO')===4) out.push({c:['MO'],lvl:'info',t:'Momento oportuno (+4): indique por qué el beneficio llega cuando más se necesita.'});
       return out;
     }
-    if(val('PE')===4 && val('RV')===1) out.push({lvl:'warn',t:'Persistencia permanente con reversibilidad natural a corto plazo. Combinación poco habitual — verifique la justificación.'});
-    if(val('RV')===4 && val('MC')===1) out.push({lvl:'warn',t:'Factor naturalmente irreversible pero recuperable de inmediato por intervención humana. Puede ser válido; documente cómo.'});
-    if(val('EF')===1 && (!impact||!impact.causal_mechanism)) out.push({lvl:'warn',t:'Efecto indirecto sin mecanismo causal descrito. Registre al menos un efecto intermedio (Acción → intermedio → impacto).'});
-    if(val('SI')>=2) out.push({lvl:'info',t:'Sinergia ≥ 2: conviene indicar con cuáles impactos interactúa para sustentar el valor.'});
-    if(val('AC')===4) out.push({lvl:'info',t:'Acumulativo: describa el mecanismo de acumulación en la justificación de AC.'});
-    if(mod('EX')===4) out.push({lvl:'info',t:'Ubicación crítica (+4): describa por qué el sitio incrementa la importancia (cauce, humedal, ANP, Ramsar…). Adjunte evidencia SIG si es posible.'});
-    if(mod('MO')===4) out.push({lvl:'info',t:'Momento crítico (+4): indique la razón temporal (coincidencia con época reproductiva, estiaje, etc.).'});
+    if(val('PE')===4 && val('RV')===1) out.push({c:['PE','RV'],lvl:'warn',t:'Persistencia permanente con reversibilidad natural a corto plazo. Combinación poco habitual — verifique la justificación.'});
+    if(val('RV')===4 && val('MC')===1) out.push({c:['RV','MC'],lvl:'warn',t:'Factor naturalmente irreversible pero recuperable de inmediato por intervención humana. Puede ser válido; documente cómo.'});
+    if(val('EF')===1 && (!impact||!impact.causal_mechanism)) out.push({c:['EF'],lvl:'warn',t:'Efecto indirecto sin mecanismo causal descrito. Registre al menos un efecto intermedio (Acción → intermedio → impacto).'});
+    if(val('SI')>=2) out.push({c:['SI'],lvl:'info',t:'Sinergia ≥ 2: conviene indicar con cuáles impactos interactúa para sustentar el valor.'});
+    if(val('AC')===4) out.push({c:['AC'],lvl:'info',t:'Acumulativo: describa el mecanismo de acumulación en la justificación de AC.'});
+    if(mod('EX')===4) out.push({c:['EX'],lvl:'info',t:'Ubicación crítica (+4): describa por qué el sitio incrementa la importancia (cauce, humedal, ANP, Ramsar…). Adjunte evidencia SIG si es posible.'});
+    if(mod('MO')===4) out.push({c:['MO'],lvl:'info',t:'Momento crítico (+4): indique la razón temporal (coincidencia con época reproductiva, estiaje, etc.).'});
     return out;
   }
 });
@@ -702,11 +740,11 @@ registerMethod({
   },
   consistency(cr,impact){
     const out=[]; const v=(c)=>cr[c]?cr[c].value:null;
-    if(v('A1')===0) out.push({lvl:'warn',t:'A1 = 0 producirá automáticamente ES = 0. Verifique que el componente realmente carezca de importancia ambiental.'});
-    if(v('A2')===0) out.push({lvl:'warn',t:'A2 = 0 representa ausencia de cambio y producirá ES = 0.'});
-    if(v('A2')===0 && v('B1')===3 && v('B2')===3 && v('B3')===3) out.push({lvl:'warn',t:'Se registró "sin cambio" (A2=0) pero permanencia, irreversibilidad y acumulación máximas. Revise la coherencia.'});
-    if(v('B3')===3) out.push({lvl:'info',t:'B3 acumulativo/sinérgico: describa el motivo de la acumulación o sinergia (e indique con qué impactos interactúa).'});
-    if(v('A1')===4) out.push({lvl:'info',t:'A1 = 4 (nacional/internacional): justifique la importancia del receptor específico; no basta la sola figura jurídica.'});
+    if(v('A1')===0) out.push({c:['A1'],lvl:'warn',t:'A1 = 0 producirá automáticamente ES = 0. Verifique que el componente realmente carezca de importancia ambiental.'});
+    if(v('A2')===0) out.push({c:['A2'],lvl:'warn',t:'A2 = 0 representa ausencia de cambio y producirá ES = 0.'});
+    if(v('A2')===0 && v('B1')===3 && v('B2')===3 && v('B3')===3) out.push({c:['A2','B1','B2','B3'],lvl:'warn',t:'Se registró "sin cambio" (A2=0) pero permanencia, irreversibilidad y acumulación máximas. Revise la coherencia.'});
+    if(v('B3')===3) out.push({c:['B3'],lvl:'info',t:'B3 acumulativo/sinérgico: describa el motivo de la acumulación o sinergia (e indique con qué impactos interactúa).'});
+    if(v('A1')===4) out.push({c:['A1'],lvl:'info',t:'A1 = 4 (nacional/internacional): justifique la importancia del receptor específico; no basta la sola figura jurídica.'});
     return out;
   }
 });
@@ -825,9 +863,9 @@ registerMethod({
   consistency(cr,impact){
     const out=[]; const v=(c)=>cr[c]?cr[c].value:null; const t=cr.T&&cr.T.value!=null?cr.T.value:0;
     ['M','E','D'].forEach(c=>{ if(v(c)===0) out.push({lvl:'err',t:`${c} = 0: un criterio básico no puede ser cero si el impacto existe.`}); });
-    if(v('S')>0) out.push({lvl:'info',t:'Sinergia > 0: identifique el mecanismo sinérgico (con qué impactos interactúa) para sustentar el valor.'});
-    if(v('A')>0) out.push({lvl:'info',t:'Acumulación > 0: describa el mecanismo de acumulación y/o las fuentes externas relacionadas.'});
-    if(v('C')>0) out.push({lvl:'info',t:'Controversia > 0: indique el origen (técnico, científico, social, legal o entre actores). Recuerde: controversia ≠ magnitud física.'});
+    if(v('S')>0) out.push({c:['S'],lvl:'info',t:'Sinergia > 0: identifique el mecanismo sinérgico (con qué impactos interactúa) para sustentar el valor.'});
+    if(v('A')>0) out.push({c:['A'],lvl:'info',t:'Acumulación > 0: describa el mecanismo de acumulación y/o las fuentes externas relacionadas.'});
+    if(v('C')>0) out.push({c:['C'],lvl:'info',t:'Controversia > 0: indique el origen (técnico, científico, social, legal o entre actores). Recuerde: controversia ≠ magnitud física.'});
     if(t>0 && impact && !Data.measuresOf(impact.id).length) out.push({lvl:'warn',t:'Mitigación T > 0 sin medidas asociadas: registre al menos una medida en la pantalla de Medidas.'});
     if(t===9) out.push({lvl:'warn',t:'T = 9 implica eliminación matemática total de la significancia (G = 0). Justifique con evidencia verificable que la medida evita por completo el efecto.'});
     return out;
@@ -1035,10 +1073,10 @@ registerMethod({
   },
   consistency(cr,impact){
     const out=[];const v=c=>cr[c]?cr[c].value:null;
-    if(v('Q')===1) out.push({lvl:'warn',t:'Confianza muy baja: sobre un impacto significativo esto equivale a NO RESUELTO. Aporte datos o eleve a revisión — la confianza no reduce la significancia (V ≠ Q).'});
-    if(v('SV')===2) out.push({lvl:'info',t:'Receptor con salvaguarda: se aplica piso de significancia (≥ Alto) y el impacto es NO COMPENSABLE — la compensación no reduce su valor; solo la evitación real lo libera.'});
-    if(v('A')>=4 && v('R')!=null && v('R')<=2) out.push({lvl:'info',t:'Cambio severo sobre receptor de baja importancia: la significancia no escala al máximo — la tabla de decisión lo modera (no es una multiplicación).'});
-    if(v('C')===3) out.push({lvl:'info',t:'Contexto deteriorante (+1): documente la tendencia previa o la proximidad al umbral que justifica el ajuste.'});
+    if(v('Q')===1) out.push({c:['Q'],lvl:'warn',t:'Confianza muy baja: sobre un impacto significativo esto equivale a NO RESUELTO. Aporte datos o eleve a revisión — la confianza no reduce la significancia (V ≠ Q).'});
+    if(v('SV')===2) out.push({c:['SV'],lvl:'info',t:'Receptor con salvaguarda: se aplica piso de significancia (≥ Alto) y el impacto es NO COMPENSABLE — la compensación no reduce su valor; solo la evitación real lo libera.'});
+    if(v('A')>=4 && v('R')!=null && v('R')<=2) out.push({c:['A','R'],lvl:'info',t:'Cambio severo sobre receptor de baja importancia: la significancia no escala al máximo — la tabla de decisión lo modera (no es una multiplicación).'});
+    if(v('C')===3) out.push({c:['C'],lvl:'info',t:'Contexto deteriorante (+1): documente la tendencia previa o la proximidad al umbral que justifica el ajuste.'});
     return out;
   }
 });
@@ -1594,6 +1632,8 @@ const Router={
     if(Screens['_after_'+this.current])Screens['_after_'+this.current]();
     Method.populateSelector();
     $('#main').scrollTop=keep;
+    if(typeof Review!=='undefined'&&Review._bar) Review._bar();
+    StickyHead.bind();
   }
 };
 /* ============================================================
@@ -2763,7 +2803,7 @@ Screens.assess=function(){
   const critHTML=M.criteria.map(c=>Assess._criterion(c,as)).join('');
   const done=M.criteria.filter(c=>as.criteria[c.code]&&as.criteria[c.code].value!=null).length;
 
-  return `<div class="page-head"><div class="titles"><div class="step-tag">Paso 06 · Caracterización · ${Assess.type==='RESIDUAL'?'RESIDUAL':'INICIAL'}</div>
+  return `<div class="page-head assess-head" id="assessHead"><div class="titles"><div class="step-tag">Paso 06 · Caracterización · ${Assess.type==='RESIDUAL'?'RESIDUAL':'INICIAL'}</div>
     <h2>${esc(imp.name)}</h2>
     <div class="pill-row" style="margin-top:5px;gap:6px">${f&&f.medium?`<span class="chip gray" title="Medio ambiental">Medio · ${esc(Catalog.medioLabel(f.medium))}</span>`:''}${f&&f.component?`<span class="chip brand" title="Componente ambiental">Componente · ${esc(f.component)}</span>`:''}</div>
     <div class="sub">${esc(a?Data.activityPath(a):(st?st.name:'—'))} · <b>${esc(a?a.name:'—')}</b> ${imp.aspect_name?'→ <i>'+esc(imp.aspect_name)+'</i> ':''}→ ${esc(f?f.name:'—')}</div></div>
@@ -3724,7 +3764,7 @@ Screens.pma=function(){
         return `<button class="btn ghost sm" style="margin:2px 3px 0 0" title="${esc(x.measure.obj||'')}" onclick="PMA.apply('${im.id}','${x.measure.c}')"><span class="chip ${PMA.outClass(out)}" style="margin-right:4px">${out}</span>${esc(x.measure.n)}</button>`;
       }).join('');
       const appliedChips=applied.map(am=>`<span class="chip ${PMA.outClass(am.out)}" style="cursor:pointer" onclick="PMA.ficha('${am.id}')" title="Abrir ficha">✓ ${PMA.outNum(am)} · ${esc(am.name)}</span>`).join(' ');
-      return `<tr>
+      return `<tr id="pmaimp_${im.id}">
         <td><div class="mono small muted">${esc(im.impact_code||'—')}</div><b>${esc(im.name)}</b>
           <div class="small muted">${esc(st?st.name:'—')} › ${esc(act?act.name:'—')} · ${esc(f?f.name:'—')}${im.receptor?' · '+esc(im.receptor):''}</div></td>
         <td style="text-align:center">${ci?`<span class="chip ${ci.cls}">${ci.label}</span>`:'—'}</td>
@@ -4129,110 +4169,162 @@ const PMAExport={
    12. REVISIÓN (apoyo de consistencia y buenas prácticas) — motor determinista
    Cada hallazgo: {sev:'alta'|'media'|'baja', cat, msg, where, fix}
    ============================================================ */
+// Encabezado fijo de Valoración: marca "stuck" al desplazar y ajusta el panel de resultado
+const StickyHead={
+  _ro:null,
+  bind(){
+    const main=$('#main'), head=document.getElementById('assessHead');
+    if(this._ro){ this._ro.disconnect(); this._ro=null; }
+    if(!head){ main.style.removeProperty('--ahh'); main.onscroll=null; return; }
+    const upd=()=>{ main.style.setProperty('--ahh',(head.offsetHeight-26+14)+'px'); };
+    main.onscroll=()=>{ head.classList.toggle('stuck', main.scrollTop>30); };
+    main.onscroll(); upd();
+    if(window.ResizeObserver){ this._ro=new ResizeObserver(upd); this._ro.observe(head); }
+  }
+};
 const Review={
   _sevRank:{alta:0,media:1,baja:2},
+  // Descripción breve de cada tipo de hallazgo (encabezado de grupo)
+  CATS:{
+    'Proyecto':'Datos generales del proyecto.',
+    'Cobertura':'Impactos sin valorar o significativos sin medida.',
+    'Trazabilidad':'Lo que sustenta cada valoración: naturaleza, justificaciones y evaluador.',
+    'Consistencia':'Combinaciones de criterios contradictorias o poco habituales.',
+    'Matriz':'Interacciones marcadas en la matriz que no tienen impacto.',
+    'Receptor sensible':'Impactos sobre ANP, Ramsar, manglar o humedal.',
+    'Jerarquía':'Orden de manejo: evitar → prevenir → mitigar → restaurar → compensar.',
+    'Ficha':'Fichas de medidas del Plan de Manejo incompletas.',
+    'Enlace':'Vínculos entre medidas e impactos.',
+    'Residual':'Re-caracterización de impactos después de las medidas.',
+    'PVA':'Acciones correctivas del Programa de Vigilancia.'
+  },
+  CAT_ORDER:['Cobertura','Consistencia','Trazabilidad','Receptor sensible','Jerarquía','Residual','Ficha','Enlace','Matriz','PVA','Proyecto'],
   clsIdx(M,cls){ return (M.classes||[]).findIndex(c=>c.id===cls); },
   isSig(M,a){ return a&&a.complete && ((M.severeIds||[]).includes(a.cls)||a.cls==='MODERADO'||a.cls==='MODERADA'); },
+  // Ubicación legible de un impacto: Etapa › Actividad → Factor
+  impPath(i){ const a=Data.activity(i.activity_id), st=a?Data.stageOf(a):null, f=Data.factor(i.factor_id);
+    return `${st?st.name:'(sin etapa)'} › ${a?a.name:'(sin actividad)'} → ${f?Data.factorLabel(f):'(sin factor)'}`; },
+  critNames(M,codes){ return (codes||[]).map(c=>{const k=M.criteria.find(x=>x.code===c);return k?`${c} (${k.name})`:c;}).join(', '); },
+  // Criterios que menciona un aviso (si la regla no los declara)
+  critsOf(M,fl){ if(fl.c&&fl.c.length)return fl.c.filter(c=>M.criteria.some(k=>k.code===c));
+    return M.criteria.map(k=>k.code).filter(c=>new RegExp('(^|[^A-Za-z0-9])'+c+'([^A-Za-z0-9]|$)').test(fl.t)); },
+  ignored(){ return DB.review_ok||{}; },
   run(){
-    const M=getMethod(); const H=[];
-    const add=(sev,cat,msg,where,fix)=>H.push({sev,cat,msg,where:where||'',fix:fix||''});
+    const M=getMethod(); const all=[];
+    // ref: {kind:'impact'|'pma-impact'|'measure'|'matrix'|'project'|'corrective', id, type, crit:[]}
+    const add=(sev,cat,msg,ref,fix)=>{ ref=ref||{kind:'none'};
+      const key=[cat,ref.kind,ref.id||'',ref.type||'',msg].join('|');
+      all.push({sev,cat,msg,fix:fix||'',ref,key}); };
     const impacts=DB.impacts||[], measures=DB.measures||[];
     const negEval=impacts.filter(i=>{const a=Data.initialAssess(i.id);return a&&a.complete&&Reco.natureOf(i)==='NEG';});
     const withMeasure=id=>measures.some(m=>(m.impact_ids||[]).includes(id));
+    const IMP=(i,type,crit)=>({kind:'impact',id:i.id,type:type||'INITIAL',crit:crit||[]});
 
-    // ---- A. COBERTURA / COMPLETITUD ----
-    // impactos sin valorar
-    impacts.forEach(i=>{ const a=Data.initialAssess(i.id); if(!a||!a.complete) add('media','Cobertura',`Impacto sin valoración completa.`,i.name,'Ábrelo en Valoración y completa los criterios del método.'); });
-    // significativos sin medida
-    negEval.forEach(i=>{ const a=Data.initialAssess(i.id); if(Review.isSig(M,a)&&!withMeasure(i.id)) add('alta','Cobertura',`Impacto ${M.clsInfo(a.cls).label.toLowerCase()} sin medida asignada.`,i.name,'Asigna al menos una medida en el Plan de Manejo (paso 11).'); });
-    // criterios sin justificación
-    let sinJust=0;
-    DB.assessments.filter(a=>a.type==='INITIAL'&&a.method===M.id).forEach(a=>{
-      const cr=a.criteria||{}; const faltan=Object.keys(cr).filter(k=>cr[k]&&(cr[k].justification==null||cr[k].justification==='')).length;
-      if(faltan>0) sinJust++;
+    // ---- PROYECTO ----
+    if(!DB.project.name) add('baja','Proyecto','El proyecto no tiene nombre.',{kind:'project',field:'p_name'},'Escribe el nombre en 01 Proyecto.');
+    if(!DB.project.responsible) add('baja','Proyecto','No hay responsable de la evaluación registrado.',{kind:'project',field:'p_team_0_name'},'Registra al responsable en el Equipo evaluador (01 Proyecto).');
+
+    // ---- COBERTURA ----
+    impacts.forEach(i=>{ const a=Data.initialAssess(i.id);
+      if(!a||!a.complete){ const faltan=M.criteria.filter(c=>!(a&&a.criteria&&a.criteria[c.code]&&a.criteria[c.code].value!=null)).map(c=>c.code);
+        add('media','Cobertura',`Valoración incompleta: faltan ${faltan.length} criterio(s) (${faltan.join(', ')}).`,IMP(i,'INITIAL',faltan),'Completa los criterios que faltan en Valoración.'); } });
+    negEval.forEach(i=>{ const a=Data.initialAssess(i.id); if(Review.isSig(M,a)&&!withMeasure(i.id))
+      add('alta','Cobertura',`Impacto ${M.clsInfo(a.cls).label.toLowerCase()} sin medida asignada.`,{kind:'pma-impact',id:i.id},'Asigna al menos una medida en el Plan de Manejo (paso 11).'); });
+
+    // ---- TRAZABILIDAD ----
+    impacts.forEach(i=>{
+      if(M.usesNature!==false && !i.nature) add('alta','Trazabilidad','Impacto sin naturaleza (positivo/negativo).',IMP(i),'Indica si el impacto es positivo o negativo en Valoración.');
+      const a=Data.initialAssess(i.id); if(!a||!a.complete) return;
+      const sinJ=M.criteria.filter(c=>{const e=a.criteria[c.code];return e&&e.value!=null&&!(e.justification||'').trim();}).map(c=>c.code);
+      if(sinJ.length) add('baja','Trazabilidad',`Sin justificación en ${sinJ.length} criterio(s): ${sinJ.join(', ')}.`,IMP(i,'INITIAL',sinJ),'Escribe el fundamento de cada criterio (dato, superficie, inventario, referencia).');
+      if(!a.evaluator) add('baja','Trazabilidad','Valoración sin evaluador registrado.',IMP(i),'Elige al evaluador en el panel de resultado de la valoración.');
     });
-    if(sinJust>0) add('baja','Trazabilidad',`${sinJust} impacto(s) con criterios sin justificación documentada.`,'', 'Agrega la justificación en cada criterio para sustentar la valoración.');
 
-    // ---- B. CONSISTENCIA DE LA VALORACIÓN (reglas del motor) ----
-    DB.assessments.filter(a=>a.type==='INITIAL'&&a.method===M.id&&a.complete).forEach(a=>{
+    // ---- CONSISTENCIA (reglas del método) ----
+    DB.assessments.filter(a=>a.method===M.id&&a.complete).forEach(a=>{
       const imp=Data.impact(a.impact_id); if(!imp)return;
       let flags=[]; try{ flags=M.consistency(a.criteria,imp)||[]; }catch(e){}
-      flags.filter(fl=>fl.lvl==='warn').forEach(fl=>{ add('media','Consistencia',fl.t,imp.name,'Revisa la combinación de criterios y su justificación.'); });
+      const tipo=a.type==='RESIDUAL'?' (residual)':'';
+      flags.forEach(fl=>{ const cr=Review.critsOf(M,fl);
+        if(fl.lvl==='err') add('alta','Consistencia',fl.t+tipo,IMP(imp,a.type,cr),'Corrige el valor del criterio indicado.');
+        else if(fl.lvl==='warn') add('media','Consistencia',fl.t+tipo,IMP(imp,a.type,cr),cr.length?`Revisa ${Review.critNames(M,cr)}. Si la combinación es correcta, explícala en la justificación y marca el hallazgo como revisado.`:'Revisa la combinación de criterios y su justificación.');
+        else if(fl.lvl==='info' && cr.length && cr.every(c=>!((a.criteria[c]||{}).justification||'').trim()))
+          add('baja','Consistencia',fl.t+tipo,IMP(imp,a.type,cr),`Documenta el motivo en la justificación de ${cr.join(', ')}.`);
+      });
+      try{ const r=M.calculate(a.criteria,a.nature); if(r&&a.score!=null&&r.score!==a.score) add('media','Consistencia',`El valor guardado (${a.score}) no coincide con el recálculo (${r.score}).`,IMP(imp,a.type),'Abre la valoración: se recalcula al entrar.'); }catch(e){}
     });
-    // recomputar score: verificar que el guardado coincide con el recálculo
-    let desfases=0;
-    DB.assessments.filter(a=>a.method===M.id&&a.complete).forEach(a=>{
-      try{ const r=M.calculate(a.criteria,a.nature); if(r&&a.score!=null&&r.score!==a.score) desfases++; }catch(e){}
-    });
-    if(desfases>0) add('media','Consistencia',`${desfases} valoración(es) con score distinto al recálculo del motor.`,'','Reabre y guarda de nuevo esas valoraciones para recalcularlas.');
 
-    // ---- C. PLAN DE MANEJO ----
+    // ---- MATRIZ ----
+    (DB.interactions||[]).filter(x=>x.exists).forEach(x=>{
+      if(!Data.impactsOf(x.activity_id,x.factor_id).length){ const a=Data.activity(x.activity_id),f=Data.factor(x.factor_id);
+        add('media','Matriz',`Interacción marcada sin impactos: ${a?a.name:'?'} → ${f?Data.factorLabel(f):'?'}.`,{kind:'matrix',id:x.id},'Quita la marca en la matriz o registra el impacto correspondiente.'); } });
+
+    // ---- PLAN DE MANEJO ----
     measures.forEach(m=>{
-      const nm=(typeof PMA!=='undefined'?PMA.outNum(m)+' · ':'')+(m.name||'(sin nombre)');
-      if(!m.name) add('media','Ficha','Medida sin nombre.',nm,'Nómbrala en su ficha.');
-      if(!m.responsible) add('media','Ficha','Medida sin responsable.',nm,'Asigna un responsable de ejecución/verificación.');
-      if(!m.ic&&!m.ie) add('alta','Ficha','Medida sin indicadores de cumplimiento ni eficacia.',nm,'Define al menos un indicador con su meta.');
+      const R={kind:'measure',id:m.id};
+      if(!m.name) add('media','Ficha','Medida sin nombre.',R,'Nómbrala en su ficha.');
+      if(!m.responsible) add('media','Ficha','Medida sin responsable.',R,'Asigna un responsable de ejecución/verificación.');
+      if(!m.ic&&!m.ie) add('alta','Ficha','Medida sin indicadores de cumplimiento ni eficacia.',R,'Define al menos un indicador con su meta.');
       else{
-        if(m.ic&&!m.icm) add('baja','Ficha','Indicador de cumplimiento sin meta.',nm,'Agrega la meta cuantificable de cumplimiento.');
-        if(m.ie&&!m.iem) add('baja','Ficha','Indicador de eficacia sin meta.',nm,'Agrega la meta cuantificable de eficacia.');
+        if(m.ic&&!m.icm) add('baja','Ficha','Indicador de cumplimiento sin meta.',R,'Agrega la meta cuantificable de cumplimiento.');
+        if(m.ie&&!m.iem) add('baja','Ficha','Indicador de eficacia sin meta.',R,'Agrega la meta cuantificable de eficacia.');
       }
-      if(!m.term&&!m.periodicity&&!m.frequency) add('baja','Ficha','Medida sin periodicidad/plazo.',nm,'Indica cuándo y por cuánto tiempo se aplica.');
-      if(!(m.impact_ids||[]).length) add('media','Enlace','Medida sin impacto enlazado.',nm,'Vincúlala al impacto que atiende.');
-      // enlaces rotos
-      (m.impact_ids||[]).forEach(id=>{ if(!Data.impact(id)) add('media','Enlace','Medida enlazada a un impacto inexistente.',nm,'Corrige el vínculo de la medida.'); });
+      if(!m.term&&!m.periodicity&&!m.frequency) add('baja','Ficha','Medida sin periodicidad/plazo.',R,'Indica cuándo y por cuánto tiempo se aplica.');
+      if(!(m.impact_ids||[]).length) add('media','Enlace','Medida sin impacto enlazado.',R,'Vincúlala al impacto que atiende.');
+      (m.impact_ids||[]).forEach(id=>{ if(!Data.impact(id)) add('media','Enlace','Medida enlazada a un impacto que ya no existe.',R,'Corrige el vínculo de la medida.'); });
+      if(m.cat){ const exp=CatalogMed.outCode(m.cat); if(m.out&&exp&&m.out!==exp) add('baja','Jerarquía',`El código de salida (${m.out}) no corresponde a la categoría "${m.cat}".`,R,'Verifica la categoría o el perfil de salida.'); }
     });
-
-    // ---- D. JERARQUÍA DE MANEJO ----
-    // impacto crítico atendido SOLO con compensación
     negEval.forEach(i=>{ const a=Data.initialAssess(i.id); if(!a)return;
-      if((M.severeIds||[]).includes(a.cls)){
-        const ms=measures.filter(m=>(m.impact_ids||[]).includes(i.id));
-        if(ms.length && ms.every(m=>m.out==='C')) add('media','Jerarquía',`Impacto ${M.clsInfo(a.cls).label.toLowerCase()} atendido solo con compensación.`,i.name,'Prioriza evitar/prevenir/mitigar antes de compensar (jerarquía de manejo).');
-      }
-    });
-    // categoría interna vs código de salida
-    measures.forEach(m=>{ if(m.cat){ const exp=CatalogMed.outCode(m.cat); if(m.out&&exp&&m.out!==exp) add('baja','Jerarquía',`El código de salida (${m.out}) no corresponde a la categoría "${m.cat}".`,(PMA.outNum(m))+' · '+(m.name||''),'Verifica la categoría o el perfil de salida.'); } });
+      if((M.severeIds||[]).includes(a.cls)){ const ms=measures.filter(m=>(m.impact_ids||[]).includes(i.id));
+        if(ms.length && ms.every(m=>m.out==='C')) add('media','Jerarquía',`Impacto ${M.clsInfo(a.cls).label.toLowerCase()} atendido solo con compensación.`,{kind:'pma-impact',id:i.id},'Prioriza evitar/prevenir/mitigar antes de compensar.'); } });
 
-    // ---- E. RECEPTORES SENSIBLES (ANP / Ramsar / manglar) ----
-    const sensImp=impacts.filter(i=>i.receptor_code==='REC-AIA'||/ramsar|manglar|humedal|ANP/i.test((i.receptor||'')+' '+(i.name||'')));
-    sensImp.forEach(i=>{
-      if(!withMeasure(i.id)) add('alta','Receptor sensible','Impacto sobre receptor sensible (ANP/Ramsar/manglar) sin medida.',i.name,'Asigna medida de protección específica y seguimiento dirigido.');
-      else{
-        const ms=measures.filter(m=>(m.impact_ids||[]).includes(i.id));
-        const tieneSeguimiento=ms.some(m=>m.cat==='Seguimiento'||m.out==='V'||/seguimiento|monitoreo/i.test(m.name||''));
-        if(!tieneSeguimiento) add('media','Receptor sensible','Receptor sensible sin medida de seguimiento/monitoreo dirigido.',i.name,'Añade una medida de vigilancia específica para el receptor.');
-      }
+    // ---- RECEPTORES SENSIBLES ----
+    impacts.filter(i=>i.receptor_code==='REC-AIA'||/ramsar|manglar|humedal|\bANP\b/i.test((i.receptor||'')+' '+(i.name||''))).forEach(i=>{
+      if(!withMeasure(i.id)) add('alta','Receptor sensible','Impacto sobre receptor sensible sin medida.',{kind:'pma-impact',id:i.id},'Asigna una medida de protección específica y seguimiento dirigido.');
+      else{ const ms=measures.filter(m=>(m.impact_ids||[]).includes(i.id));
+        if(!ms.some(m=>m.cat==='Seguimiento'||m.out==='V'||/seguimiento|monitoreo/i.test(m.name||''))) add('media','Receptor sensible','Receptor sensible sin medida de seguimiento o monitoreo.',{kind:'pma-impact',id:i.id},'Añade una medida de vigilancia específica para el receptor.'); }
     });
 
-    // ---- F. RESIDUAL ----
+    // ---- RESIDUAL ----
     negEval.forEach(i=>{ const init=Data.initialAssess(i.id), res=Data.residualAssess(i.id); if(!init)return;
-      if((M.severeIds||[]).includes(init.cls)&&!(res&&res.complete)) add('media','Residual',`Impacto ${M.clsInfo(init.cls).label.toLowerCase()} sin evaluación residual.`,i.name,'Re-caracteriza el residual tras las medidas (paso 11 › Residual).');
+      if((M.severeIds||[]).includes(init.cls)&&!(res&&res.complete)) add('media','Residual',`Impacto ${M.clsInfo(init.cls).label.toLowerCase()} sin evaluación residual.`,IMP(i,'RESIDUAL'),'Re-caracteriza el impacto considerando las medidas aplicadas.');
       if(res&&res.complete){
-        // baja de clase sin medida
-        if(Review.clsIdx(M,res.cls)<Review.clsIdx(M,init.cls) && !withMeasure(i.id)) add('media','Residual','El residual baja de severidad sin medida que lo justifique.',i.name,'Asocia la(s) medida(s) que producen la reducción, o revisa el residual.');
-        // reducción implausible: todos los criterios al mínimo
-        const cr=res.criteria||{}; const keys=Object.keys(cr); const min=keys.length&&keys.every(k=>{const vals=(M.criteria.find(c=>c.code===k)||{}).scale||[];const mn=Math.min(...vals.map(s=>s.v));return cr[k]&&cr[k].value===mn;});
-        if(min) add('media','Residual','Residual con todos los criterios en el mínimo (reducción posiblemente implausible).',i.name,'La importancia/relevancia del receptor no suele anularse; revisa la re-caracterización.');
+        if(Review.clsIdx(M,res.cls)<Review.clsIdx(M,init.cls) && !withMeasure(i.id)) add('media','Residual','El residual baja de clase sin una medida que lo justifique.',{kind:'pma-impact',id:i.id},'Asocia la(s) medida(s) que producen la reducción, o revisa el residual.');
+        const cr=res.criteria||{}; const keys=Object.keys(cr);
+        if(keys.length&&keys.every(k=>{const vals=(M.criteria.find(c=>c.code===k)||{}).scale||[];return cr[k]&&cr[k].value===Math.min(...vals.map(s=>s.v));}))
+          add('media','Residual','Residual con todos los criterios en el mínimo (reducción posiblemente implausible).',IMP(i,'RESIDUAL'),'La relevancia del receptor no suele anularse; revisa la re-caracterización.');
+        const camb=M.criteria.filter(c=>{const e0=init.criteria[c.code]||{},e1=res.criteria[c.code]||{};
+          return ((e0.value||0)+(e0.modifier||0))!==((e1.value||0)+(e1.modifier||0)) && (!(e1.justification||'').trim()||e1.justification===e0.justification);}).map(c=>c.code);
+        if(camb.length) add('baja','Residual',`El residual cambió ${camb.join(', ')} sin una nueva justificación.`,IMP(i,'RESIDUAL',camb),'Explica qué medida produce el cambio en cada criterio.');
       }
     });
 
-    // ---- G. PVA / ACCIONES CORRECTIVAS ----
+    // ---- PVA ----
     const today=nowISO().slice(0,10);
-    (DB.corrective||[]).forEach(ca=>{ if(!ca.closed){ const m=(typeof PMA!=='undefined')?PMA.measure(ca.measure_id):null;
-      if(ca.due&&ca.due<today) add('alta','PVA',`Acción correctiva vencida sin cerrar (venció ${ca.due}).`,m?m.name:'',' Ejecútala y ciérrala con evidencia, o reprograma.');
-      if(!ca.responsible) add('baja','PVA','Acción correctiva sin responsable asignado.',m?m.name:'','Asigna responsable y fecha de verificación.');
+    (DB.corrective||[]).forEach(ca=>{ if(!ca.closed){
+      if(ca.due&&ca.due<today) add('alta','PVA',`Acción correctiva vencida sin cerrar (venció ${ca.due}).`,{kind:'corrective',id:ca.id,mid:ca.measure_id},'Ejecútala y ciérrala con evidencia, o reprográmala.');
+      if(!ca.responsible) add('baja','PVA','Acción correctiva sin responsable asignado.',{kind:'corrective',id:ca.id,mid:ca.measure_id},'Asigna responsable y fecha de verificación.');
     }});
-    // Nota: la cobertura de seguimiento del PVA se evalúa en el propio módulo de Vigilancia,
-    // no se penaliza aquí porque depende de la etapa (el PVA corre en operación).
 
-    // ---- Resumen / puntaje ----
+    // ---- Revisados por el usuario / resumen ----
+    const ok=Review.ignored();
+    const H=all.filter(h=>!ok[h.key]), done=all.filter(h=>ok[h.key]);
     const counts={alta:0,media:0,baja:0}; H.forEach(h=>counts[h.sev]++);
-    H.sort((a,b)=>Review._sevRank[a.sev]-Review._sevRank[b.sev]);
-    // puntaje 0-100: penalización absoluta y gradual (los hallazgos bajos casi no restan)
+    H.sort((a,b)=>Review._sevRank[a.sev]-Review._sevRank[b.sev]||Review.CAT_ORDER.indexOf(a.cat)-Review.CAT_ORDER.indexOf(b.cat));
     const penal=counts.alta*7 + counts.media*2 + counts.baja*0.5;
     const score=Math.max(0,Math.round(100-penal));
     const grade= score>=85?'Sólido': score>=65?'Aceptable con observaciones': score>=40?'Requiere trabajo':'Incompleto';
-    return {H,counts,score,grade,stats:{impacts:impacts.length,measures:measures.length,negEval:negEval.length,method:M.name}};
+    return {H,done,counts,score,grade,stats:{impacts:impacts.length,measures:measures.length,negEval:negEval.length,method:M.name}};
+  },
+  // Texto "dónde" de un hallazgo
+  where(h){ const r=h.ref||{};
+    if(r.kind==='impact'||r.kind==='pma-impact'){ const i=Data.impact(r.id); if(!i)return '';
+      return {title:i.name+(r.type==='RESIDUAL'?' · residual':''),path:Review.impPath(i),crit:(r.crit||[])}; }
+    if(r.kind==='measure'){ const m=PMA.measure(r.id); return m?{title:(PMA.outNum(m)+' · '+(m.name||'(sin nombre)')),path:'Plan de Manejo › Medidas'}:''; }
+    if(r.kind==='corrective'){ const m=PMA.measure(r.mid); return {title:m?m.name:'Acción correctiva',path:'Plan de Manejo › Acciones correctivas'}; }
+    if(r.kind==='matrix') return {title:'Matriz de interacción',path:'Paso 04'};
+    if(r.kind==='project') return {title:'Datos del proyecto',path:'Paso 01'};
+    return '';
   },
   // ---- Paquete de revisión para IA externa (texto pegable) ----
   packageText(){
@@ -4263,7 +4355,7 @@ const Review={
     L.push('');
     L.push('## Hallazgos del revisor determinista');
     if(!r.H.length) L.push('- (sin hallazgos automáticos)');
-    r.H.forEach(h=>L.push(`- [${h.sev.toUpperCase()}] (${h.cat}) ${h.msg}${h.where?' → '+h.where:''} | sugerencia: ${h.fix}`));
+    r.H.forEach(h=>{const w=Review.where(h);L.push(`- [${h.sev.toUpperCase()}] (${h.cat}) ${h.msg}${w?' → '+w.title+(w.path?' ['+w.path+']':''):''} | sugerencia: ${h.fix}`);});
     L.push('');
     L.push('## Lo que se te pide');
     L.push('1. Valida la coherencia de la valoración (criterios entre sí y significancias resultantes).');
@@ -4286,43 +4378,140 @@ PMA._showAlt=function(impId){
 
 Screens.review=function(){
   const M=getMethod();
-  if(!DB.impacts.length) return `<div class="page-head"><div class="titles"><div class="step-tag">Paso 12 · Revisión</div><h2>Revisión (apoyo IA)</h2></div></div>
+  if(!DB.impacts.length) return `<div class="page-head"><div class="titles"><div class="step-tag">Paso 12 · Revisión</div><h2>Revisión del expediente</h2></div></div>
     <div class="card"><div class="bd"><div class="empty"><div class="ic">✔</div><h4>Nada que revisar aún</h4><p>Captura y valora impactos para que el revisor pueda auditar el expediente.</p></div></div></div>`;
-  const r=Review.run();
+  Review._nav=null; Review._bar();
+  const r=Review.run(); Review._last=r;
   const gradeCls=r.score>=85?'compat':r.score>=65?'moder':r.score>=40?'sever':'critic';
-  const sevCls={alta:'critic',media:'sever',baja:'moder'};
-  const sevLbl={alta:'Alta',media:'Media',baja:'Baja'};
-  const byCat={}; r.H.forEach(h=>{(byCat[h.cat]=byCat[h.cat]||[]).push(h);});
-  const rows=r.H.map(h=>`<tr>
-      <td style="text-align:center"><span class="chip ${sevCls[h.sev]}">${sevLbl[h.sev]}</span></td>
-      <td><span class="chip gray">${esc(h.cat)}</span></td>
-      <td><b>${esc(h.msg)}</b>${h.where?`<div class="small muted">${esc(h.where)}</div>`:''}</td>
-      <td class="small">${esc(h.fix)}</td>
-    </tr>`).join('');
-  return `<div class="page-head"><div class="titles"><div class="step-tag">Paso 12 · Revisión</div><h2>Revisión — apoyo de consistencia y buenas prácticas</h2>
-    <div class="sub">Auditoría automática del expediente (valoración + plan de manejo). Es un apoyo técnico; no sustituye el criterio del responsable que firma la MIA.</div></div>
-    <div class="rowbtns"><button class="btn" onclick="Review.copyPackage()">⧉ Copiar paquete para IA externa</button><button class="btn ghost sm" onclick="Review.downloadPackage()">↧ Descargar .txt</button></div></div>
+  const F=Review._filter, V=Review._view;
+  const list=r.H.filter(h=>F==='todas'||h.sev===F);
+  const fbtn=(k,l,n,cls)=>`<button class="rv-f ${F===k?'on':''} ${cls||''}" onclick="Review._filter='${k}';Router.refresh()">${l} <b>${n}</b></button>`;
+  // agrupar
+  let groups=[];
+  if(V==='impacto'){
+    const g={}; list.forEach(h=>{const r0=h.ref||{};const isImp=(r0.kind==='impact'||r0.kind==='pma-impact')&&Data.impact(r0.id);
+      const k=isImp?'I:'+r0.id:(r0.kind==='measure'||r0.kind==='corrective'?'Z:Plan de Manejo':'Z:General');
+      (g[k]=g[k]||[]).push(h);});
+    groups=Object.entries(g).map(([k,items])=>{ if(k.startsWith('I:')){const i=Data.impact(k.slice(2));const a=Data.initialAssess(i.id);const ci=a&&a.complete?M.clsInfo(a.cls):null;
+        return {title:i.name,desc:Review.impPath(i),chip:ci?`<span class="chip ${ci.cls}">${esc(ci.label)}</span>`:'<span class="chip gray">Sin valorar</span>',items,rank:Math.min(...items.map(h=>Review._sevRank[h.sev]))};}
+      return {title:k.slice(2),desc:k==='Z:Plan de Manejo'?'Fichas, enlaces y acciones correctivas.':'Proyecto y matriz de interacción.',chip:'',items,rank:9};})
+      .sort((a,b)=>a.rank-b.rank||b.items.length-a.items.length);
+  } else {
+    const g={}; list.forEach(h=>(g[h.cat]=g[h.cat]||[]).push(h));
+    groups=Review.CAT_ORDER.filter(c=>g[c]).map(c=>({title:c,desc:Review.CATS[c]||'',chip:'',items:g[c]}));
+  }
+  const sevCls={alta:'critic',media:'sever',baja:'moder'}, sevLbl={alta:'Alta',media:'Media',baja:'Baja'};
+  const item=(h)=>{ const w=Review.where(h); const showWhere=V!=='impacto'||!(h.ref&&(h.ref.kind==='impact'||h.ref.kind==='pma-impact'));
+    const crit=w&&w.crit&&w.crit.length?`<span class="rv-crit">${w.crit.map(c=>`<span>${esc(c)}</span>`).join('')}</span>`:'';
+    return `<div class="rv-item sev-${h.sev}">
+      <span class="chip ${sevCls[h.sev]} rv-sev">${sevLbl[h.sev]}</span>
+      <div class="rv-body">
+        <div class="rv-msg">${V==='impacto'?`<span class="rv-cat">${esc(h.cat)}</span> `:''}${esc(h.msg)}</div>
+        ${showWhere&&w?`<div class="rv-where"><b>${esc(w.title)}</b>${w.path?` <span>· ${esc(w.path)}</span>`:''}</div>`:''}
+        ${crit||(V==='impacto'&&h.ref&&h.ref.type==='RESIDUAL'?'<span class="rv-crit"><span>Residual</span></span>':'')}
+        <div class="rv-fix">${esc(h.fix)}</div>
+      </div>
+      <div class="rv-act">
+        ${h.ref&&h.ref.kind!=='none'?`<button class="btn sm" onclick="Review.go(Review._k[${Review._kid(h.key)}])">Ir a corregir →</button>`:''}
+        <button class="rv-ok" title="Lo revisé y es correcto: no volver a mostrarlo" onclick="Review.dismiss(Review._k[${Review._kid(h.key)}])">✓ Marcar revisado</button>
+      </div></div>`; };
+  const groupsHTML=groups.map(g=>`<div class="card rv-group"><div class="hd"><div><h3>${esc(g.title)} <span class="rv-n">${g.items.length}</span></h3><div class="desc small muted">${esc(g.desc)}</div></div>${g.chip}</div>
+      <div class="bd" style="padding:0">${g.items.map(item).join('')}</div></div>`).join('');
+
+  return `<div class="page-head"><div class="titles"><div class="step-tag">Paso 12 · Revisión</div><h2>Revisión del expediente</h2>
+    <div class="sub">Revisión automática de la valoración y del plan de manejo. Cada hallazgo indica <b>dónde</b> está y te lleva a corregirlo. Es un apoyo técnico; no sustituye el criterio del responsable que firma la MIA.</div></div></div>
 
   <div class="stats">
-    <div class="stat ${gradeCls}"><span class="bar"></span><div class="v">${r.score}</div><div class="l">Salud del expediente</div></div>
-    <div class="stat critic"><span class="bar"></span><div class="v">${r.counts.alta}</div><div class="l">Hallazgos altos</div></div>
-    <div class="stat sever"><span class="bar"></span><div class="v">${r.counts.media}</div><div class="l">Medios</div></div>
-    <div class="stat moder"><span class="bar"></span><div class="v">${r.counts.baja}</div><div class="l">Bajos</div></div>
+    <div class="stat ${gradeCls}"><span class="bar"></span><div class="v">${r.score}</div><div class="l">Salud del expediente · ${esc(r.grade)}</div></div>
+    <div class="stat critic"><span class="bar"></span><div class="v">${r.counts.alta}</div><div class="l">Alta · atender antes de entregar</div></div>
+    <div class="stat sever"><span class="bar"></span><div class="v">${r.counts.media}</div><div class="l">Media · conviene corregir</div></div>
+    <div class="stat moder"><span class="bar"></span><div class="v">${r.counts.baja}</div><div class="l">Baja · documentación</div></div>
   </div>
-  <div class="card"><div class="bd" style="padding:12px 16px"><b>Diagnóstico:</b> <span class="chip ${gradeCls}">${esc(r.grade)}</span>
-    <span class="muted small">· ${r.stats.impacts} impactos · ${r.stats.measures} medidas · método ${esc(r.stats.method)}</span></div></div>
 
-  ${r.H.length?`<div class="card"><div class="hd"><h3>Hallazgos (${r.H.length})</h3><span class="desc">Ordenados por severidad</span></div><div class="bd" style="padding:0">
-    <table class="tbl"><thead><tr><th style="width:80px;text-align:center">Severidad</th><th style="width:130px">Categoría</th><th>Hallazgo</th><th style="width:34%">Sugerencia</th></tr></thead>
-    <tbody>${rows}</tbody></table></div></div>`
-  :`<div class="card"><div class="bd"><div class="empty"><div class="ic">✓</div><h4>Sin hallazgos automáticos</h4><p>El expediente pasa las reglas deterministas. Puedes enriquecer la revisión con el paquete para IA externa.</p></div></div></div>`}
+  ${r.H.length?`<div class="rv-toolbar">
+      <div class="rv-fs">${fbtn('todas','Todas',r.H.length)}${fbtn('alta','Alta',r.counts.alta,'a')}${fbtn('media','Media',r.counts.media,'m')}${fbtn('baja','Baja',r.counts.baja,'b')}</div>
+      <div class="rv-fs"><span class="small muted" style="align-self:center;margin-right:4px">Agrupar:</span>
+        <button class="rv-f ${V==='tipo'?'on':''}" onclick="Review._view='tipo';Router.refresh()">Por tipo</button>
+        <button class="rv-f ${V==='impacto'?'on':''}" onclick="Review._view='impacto';Router.refresh()">Por impacto</button></div>
+      ${list.length?`<button class="btn" onclick="Review.go(Review._k[${Review._kid(list[0].key)}])">▶ Corregir uno por uno</button>`:''}
+    </div>
+    ${list.length?groupsHTML:`<div class="card"><div class="bd"><div class="empty"><div class="ic">✓</div><h4>Sin hallazgos de severidad ${esc(F)}</h4></div></div></div>`}`
+  :`<div class="card"><div class="bd"><div class="empty"><div class="ic">✓</div><h4>Sin hallazgos pendientes</h4><p>El expediente pasa todas las reglas automáticas.</p></div></div></div>`}
 
-  <div class="card"><div class="hd"><h3>Revisión con IA externa</h3></div><div class="bd">
-    <p class="small muted" style="margin-top:0">Para no depender de conexión ni exponer datos automáticamente, VALIA arma un <b>paquete de revisión</b> (resumen estructurado del proyecto + estos hallazgos) que puedes pegar en un asistente como Claude para obtener una revisión redactada y con matiz. Tú decides qué compartir.</p>
+  ${r.done.length?`<details class="card rv-done"><summary class="hd"><h3>Marcados como revisados <span class="rv-n">${r.done.length}</span></h3><span class="desc small muted">No cuentan en la salud del expediente</span></summary>
+    <div class="bd" style="padding:0">${r.done.map(h=>{const w=Review.where(h);const ok=Review.ignored()[h.key]||{};return `<div class="rv-item done">
+      <span class="chip gray rv-sev">${esc(h.cat)}</span>
+      <div class="rv-body"><div class="rv-msg">${esc(h.msg)}</div>${w?`<div class="rv-where"><b>${esc(w.title)}</b>${w.path?` <span>· ${esc(w.path)}</span>`:''}</div>`:''}<div class="rv-fix">Revisado ${esc(ok.date||'')}${ok.by?' · '+esc(ok.by):''}</div></div>
+      <div class="rv-act"><button class="rv-ok" onclick="Review.restore(Review._k[${Review._kid(h.key)}])">↺ Volver a mostrar</button></div></div>`;}).join('')}</div></details>`:''}
+
+  <details class="card rv-ia"><summary class="hd"><h3>Revisión con IA externa</h3><span class="desc small muted">Opcional</span></summary><div class="bd">
+    <p class="small muted" style="margin-top:0">VALIA arma un <b>paquete de revisión</b> (resumen del proyecto + estos hallazgos) que puedes pegar en un asistente como Claude para obtener una revisión redactada. Tú decides qué compartir.</p>
     <div class="rowbtns"><button class="btn" onclick="Review.copyPackage()">⧉ Copiar paquete</button><button class="btn ghost" onclick="Review.downloadPackage()">↧ Descargar .txt</button></div>
-  </div></div>
-  <div class="small muted">Las reglas cubren: cobertura de impactos, consistencia de la valoración (incluye recálculo del score), fichas e indicadores, jerarquía de manejo, receptores sensibles (ANP/Ramsar/manglar), residual y PVA/acciones correctivas.</div>`;
+  </div></details>
+  <div class="small muted">Reglas: datos del proyecto, valoraciones completas, naturaleza, justificaciones y evaluador, consistencia de criterios y recálculo, interacciones sin impacto, receptores sensibles, jerarquía de manejo, fichas e indicadores, residual y acciones correctivas.</div>`;
 };
+Review._filter='todas'; Review._view='tipo'; Review._nav=null;
+// Las claves se pasan por índice (evita problemas con comillas en los textos)
+Review._k=[]; Review._kid=function(key){ let i=Review._k.indexOf(key); if(i<0){ Review._k.push(key); i=Review._k.length-1; } return i; };
+Review._find=function(key){ const r=Review.run(); return {r,h:r.H.find(x=>x.key===key)||r.done.find(x=>x.key===key)}; };
+// Ir al lugar del hallazgo y dejar la barra para continuar
+Review.go=function(key){
+  const {r,h}=Review._find(key); if(!h){ Router.go('review'); return; }
+  const list=r.H.filter(x=>Review._filter==='todas'||x.sev===Review._filter);
+  Review._nav={key,idx:Math.max(0,list.findIndex(x=>x.key===key)),filter:Review._filter};
+  const ref=h.ref||{};
+  const flash=(el)=>{ if(!el)return; el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('rv-flash'); void el.offsetWidth; el.classList.add('rv-flash'); };
+  if(ref.kind==='impact'){
+    Router._scroll[Router.current]=$('#main').scrollTop;
+    Assess.edit(ref.id,ref.type||'INITIAL');
+    setTimeout(()=>{ let first=null;
+      (ref.crit||[]).forEach(c=>{const el=document.getElementById('crit_'+c); if(el){el.classList.add('open'); el.classList.add('rv-target'); first=first||el;}});
+      if(first){ flash(first); const ta=first.querySelector('textarea'); if(ta&&/justific/i.test(h.msg))setTimeout(()=>ta.focus({preventScroll:true}),400); }
+      else { $('#main').scrollTop=0; }
+    },60);
+  } else if(ref.kind==='pma-impact'){
+    PMA._tab='impactos'; Router.go('pma'); setTimeout(()=>flash(document.getElementById('pmaimp_'+ref.id)),60);
+  } else if(ref.kind==='measure'){
+    PMA._tab='medidas'; Router.go('pma'); setTimeout(()=>PMA.ficha(ref.id),60);
+  } else if(ref.kind==='corrective'){
+    PMA._tab='acciones'; Router.go('pma');
+  } else if(ref.kind==='matrix'){
+    Router.go('matrix');
+  } else if(ref.kind==='project'){
+    Router.go('project'); setTimeout(()=>{const el=document.getElementById(ref.field||'p_name'); if(el){flash(el); el.focus({preventScroll:true});}},60);
+  }
+  Review._bar();
+};
+// Siguiente hallazgo pendiente (si el actual ya se corrigió, toma el que ocupó su lugar)
+Review.next=function(){
+  const nav=Review._nav||{idx:-1}; const r=Review.run();
+  const list=r.H.filter(x=>(nav.filter||'todas')==='todas'||x.sev===nav.filter);
+  if(!list.length){ Toast.show('¡No quedan hallazgos pendientes!','ok'); Router.go('review'); return; }
+  const cur=list.findIndex(x=>x.key===nav.key);
+  const nx=cur>=0?list[(cur+1)%list.length]:list[Math.min(nav.idx,list.length-1)];
+  Review.go(nx.key);
+};
+// Barra inferior mientras se corrige desde la Revisión
+Review._bar=function(){
+  let b=document.getElementById('revbar');
+  if(!Review._nav || Router.current==='review'){ if(b)b.remove(); return; }
+  const {r,h}=Review._find(Review._nav.key);
+  const list=r.H.filter(x=>(Review._nav.filter||'todas')==='todas'||x.sev===Review._nav.filter);
+  const pos=list.findIndex(x=>x.key===Review._nav.key);
+  const fixed=!h||pos<0;
+  if(!b){ b=document.createElement('div'); b.id='revbar'; document.body.appendChild(b); }
+  b.innerHTML=`<span class="rb-tag">Revisión</span>
+    <span class="rb-msg">${fixed?'<b class="rb-ok">✓ Hallazgo resuelto o marcado.</b>':`<b>${pos+1} de ${list.length}</b> · ${esc(h.msg)}`}</span>
+    <button class="btn ghost sm" onclick="Router.go('review')">← Volver a Revisión</button>
+    ${!fixed?`<button class="btn ghost sm" onclick="Review.dismiss(Review._k[${Review._kid(Review._nav.key)}],true)">✓ Marcar revisado</button>`:''}
+    <button class="btn sm" onclick="Review.next()">Siguiente →</button>
+    <button class="rb-x" title="Cerrar" onclick="Review._nav=null;Review._bar()">✕</button>`;
+};
+Review.dismiss=function(key,stay){
+  DB.review_ok=DB.review_ok||{}; DB.review_ok[key]={date:todayStr(),by:DB.project.responsible||''}; touch();
+  if(stay){ Review._bar(); Toast.show('Hallazgo marcado como revisado','ok'); } else Router.refresh();
+};
+Review.restore=function(key){ if(DB.review_ok){ delete DB.review_ok[key]; touch(); } Router.refresh(); };
 Review.copyPackage=function(){
   const t=Review.packageText();
   const done=()=>Toast.show('Paquete de revisión copiado — pégalo en tu asistente IA');
@@ -4660,30 +4849,10 @@ const ClassMatrix={
 /* ============================================================
    13. CONTROL DE CALIDAD (checklist antes de reportar)
    ============================================================ */
+// El control de calidad del Reporte usa las mismas reglas que la Revisión (paso 12)
 function qualityCheck(){
-  const M=getMethod(); const issues=[];
-  if(!DB.project.name) issues.push({lvl:'warn',t:'El proyecto no tiene nombre.'});
-  DB.impacts.forEach(i=>{
-    if(M.usesNature!==false && !i.nature) issues.push({lvl:'err',t:`Impacto sin naturaleza: ${i.name}`});
-    const as=Data.initialAssess(i.id);
-    if(!as||!as.complete){ issues.push({lvl:'warn',t:`Impacto sin valoración completa: ${i.name}`}); return; }
-    M.criteria.forEach(c=>{const e=as.criteria[c.code]||{}; if(!e.justification||!e.justification.trim()) issues.push({lvl:'info',t:`Sin justificación en ${c.code} · ${i.name}`});});
-    if(!as.evaluator) issues.push({lvl:'info',t:`Sin evaluador registrado: ${i.name}`});
-    if(isNeg(i,as,M)&&(M.severeIds||[]).includes(as.cls)&&!Data.measuresOf(i.id).length)
-      issues.push({lvl:'warn',t:`Impacto ${M.clsInfo(as.cls).label.toLowerCase()} sin medidas: ${i.name}`});
-    const res=Data.residualAssess(i.id);
-    if(res&&res.complete){M.criteria.forEach(c=>{const e0=(as.criteria[c.code]||{}),e1=(res.criteria[c.code]||{});
-      if(((e0.value||0)+(e0.modifier||0))!==((e1.value||0)+(e1.modifier||0))&&(!e1.justification||!e1.justification.trim()))
-        issues.push({lvl:'info',t:`Residual ${c.code} cambió sin nueva justificación · ${i.name}`});});}
-  });
-  // Interacciones marcadas sin impactos (celdas colgadas)
-  DB.interactions.filter(x=>x.exists).forEach(x=>{
-    if(!Data.impactsOf(x.activity_id,x.factor_id).length){
-      const a=Data.activity(x.activity_id),f=Data.factor(x.factor_id);
-      issues.push({lvl:'warn',t:`Interacción marcada sin impactos: ${a?a.name:'?'} → ${f?f.name:'?'} (quítala o agrega un impacto)`});
-    }
-  });
-  return issues;
+  const lvl={alta:'err',media:'warn',baja:'info'};
+  return Review.run().H.map(h=>{const w=Review.where(h);return {lvl:lvl[h.sev],t:h.msg+(w?' · '+w.title:''),key:h.key,go:h.ref&&h.ref.kind!=='none'};});
 }
 /* ============================================================
    14. REPORTE PARA LA MIA (imprimible → PDF del navegador)
@@ -4701,7 +4870,7 @@ Screens.report=function(){
 
   ${!s.valuedN?`<div class="card"><div class="bd"><div class="empty"><div class="ic">▤</div><h4>Aún no hay contenido para el reporte</h4><p>Valora al menos un impacto para generar el documento.</p><button class="btn" onclick="Router.go('assess')">Ir a valoración</button></div></div></div>`:`
   <div class="alert ${errs?'err':warns?'warn':'info'}" style="margin-bottom:16px"><span class="ai">${errs?'✕':warns?'⚠':'ℹ'}</span>
-    <span>Control de calidad: <b>${errs} error(es)</b>, ${warns} advertencia(s), ${infos} nota(s). ${errs||warns?'Revisa antes de entregar.':'Sin bloqueos.'} <a href="#" onclick="Report.qc();return false">Ver detalle</a></span></div>
+    <span>Control de calidad: <b>${errs} hallazgo(s) alto(s)</b>, ${warns} medio(s), ${infos} bajo(s). ${errs||warns?'Revisa antes de entregar.':'Sin bloqueos.'} <a href="#" onclick="Report.qc();return false">Ver detalle</a></span></div>
   <div class="card"><div class="bd" style="padding:0">
     <div id="reportDoc">${Report.build()}</div>
   </div></div>`}`;
@@ -4710,9 +4879,9 @@ const Report={
   print(){ document.body.classList.add('printing'); window.print(); setTimeout(()=>document.body.classList.remove('printing'),500); },
   qc(){
     const issues=qualityCheck();
-    const body=issues.length? issues.map(i=>`<div class="alert ${i.lvl==='err'?'err':i.lvl==='warn'?'warn':'info'}"><span class="ai">${i.lvl==='err'?'✕':i.lvl==='warn'?'⚠':'ℹ'}</span><span>${esc(i.t)}</span></div>`).join('')
+    const body=issues.length? `<p class="small muted" style="margin-top:0">Son los mismos hallazgos de <a href="#" onclick="Modal.close();Router.go('review');return false">12 Revisión</a>: rojo = alta, amarillo = media, azul = baja.</p>`+issues.map(i=>`<div class="alert ${i.lvl==='err'?'err':i.lvl==='warn'?'warn':'info'}"><span class="ai">${i.lvl==='err'?'✕':i.lvl==='warn'?'⚠':'ℹ'}</span><span style="flex:1">${esc(i.t)}</span>${i.go?`<a href="#" style="white-space:nowrap;font-weight:600" onclick="Modal.close();Review.go(Review._k[${Review._kid(i.key)}]);return false">Ir →</a>`:''}</div>`).join('')
       : '<div class="alert info"><span class="ai">✓</span><span>Sin observaciones. La evaluación cumple los criterios básicos de completitud y trazabilidad.</span></div>';
-    Modal.open('Control de calidad',body,`<button class="btn" onclick="Modal.close()">Cerrar</button>`,true);
+    Modal.open('Control de calidad',body,`<button class="btn ghost" onclick="Modal.close();Router.go('review')">Abrir Revisión</button><button class="btn" onclick="Modal.close()">Cerrar</button>`,true);
   },
   fmtCls(cls){const M=getMethod();const ci=M.clsInfo(cls);return `<span class="chip ${ci.cls}">${ci.label}</span>`;},
   build(){
